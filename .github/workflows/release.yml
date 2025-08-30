@@ -1,15 +1,34 @@
-name: Build
+name: Release
 
-on: workflow_dispatch
+on:
+  workflow_dispatch:
+    inputs:
+      autosplitter:
+        description: 'The autosplitter to release.'
+        required: true
+        type: choice
+        options:
+          - dismantled
+          - doom_the_dark_ages
+          - kuru_kuru_kururin
+          - selaco
+          - snap_the_sentinel
 
 jobs:
-  build:
-    name: Build
+  print-tag:
+    runs-on: ubuntu-latest
+    if: ${{ inputs.autosplitter }}
+    steps:
+      - name: Print the chosen autosplitter to STDOUT
+        run: echo  The autosplitter is ${{ inputs.autosplitter }}
+
+  release:
+    name: Release
     runs-on: ubuntu-latest
     permissions: 
       contents: write
     steps:
-      - name: Checkout Commit
+      - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -43,34 +62,3 @@ jobs:
             
             For example, you will always find the latest version of Dismantled's autosplitter at:
             https://github.com/mitchell-merry/autosplitters-wasm/releases/download/latest/dismantled.wasm.
-
-  clippy:
-    name: Check clippy lints
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Commit
-        uses: actions/checkout@v3
-
-      - name: Install Rust
-        uses: hecrj/setup-rust-action@v1
-        with:
-          components: clippy
-          targets: 'wasm32-wasip1'
-
-      - name: Run Clippy
-        run: cargo clippy --all-features
-
-  format:
-    name: Check formatting
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Commit
-        uses: actions/checkout@v3
-
-      - name: Install Rust
-        uses: hecrj/setup-rust-action@v1
-        with:
-          components: rustfmt
-
-      - name: Run cargo fmt
-        run: cargo fmt -- --check || true

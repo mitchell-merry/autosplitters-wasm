@@ -1,10 +1,9 @@
 [package]
-name = "kuru-kuru-kururin"
+name = "kuru_kuru_kururin"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-#asr = { git = "https://github.com/mitchell-merry/asr", branch = "mgba-mac", features = ["derive", "gba"] }
 asr = { git = "https://github.com/mitchell-merry/asr", branch = "mgba-mac", features = ["derive", "gba", "signature"] }
 bitflags = { version = "2.9.3", features = ["bytemuck"] }
 bytemuck = "1.23.1"

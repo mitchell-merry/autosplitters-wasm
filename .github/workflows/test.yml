@@ -1,0 +1,36 @@
+name: Test
+
+on:
+  - push
+
+jobs:
+  clippy:
+    name: Check clippy lints
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Commit
+        uses: actions/checkout@v3
+
+      - name: Install Rust
+        uses: hecrj/setup-rust-action@v1
+        with:
+          components: clippy
+          targets: 'wasm32-wasip1'
+
+      - name: Run Clippy
+        run: cargo clippy --all-features
+
+  format:
+    name: Check formatting
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Commit
+        uses: actions/checkout@v3
+
+      - name: Install Rust
+        uses: hecrj/setup-rust-action@v1
+        with:
+          components: rustfmt
+
+      - name: Run cargo fmt
+        run: cargo fmt -- --check || true
