@@ -52,4 +52,4 @@ jobs:
             This is the release version of the ${{ inputs.autosplitter }} autosplitter at ${{ github.sha }}.
             
             You can access the latest version of the autosplitter at:
-            https://github.com/mitchell-merry/autosplitters-wasm/releases/download/latest/${{ inputs.autosplitter }}.wasm
+            https://github.com/mitchell-merry/autosplitters-wasm/releases/download/${{ inputs.autosplitter }}%40latest/${{ inputs.autosplitter }}.wasm
