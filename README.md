@@ -1,13 +1,19 @@
-# livesplit-zdoom
+# autosplitters-wasm
 
-messing around with reflection in zdoom games
-
-tested with Dismantled, an LZDoom 3.82 game
+my collection of wasm autosplitters
 
 # MEGA DISCLAIMER
 I am bad at Rust
 
 This is a hard language
+
+## Project Structure
+
+I have some work done in a couple engines...
+- [zdoom](./zdoom) - for ZDoom (and gzdoom/lzdoom) - used for a few games here
+- [idtech](./idtech) - for the IdTech engine (used for DOOM: The Dark Ages)
+
+There's helpers in [helpers](./helpers), and everything else is a game.
 
 ## Compilation
 

@@ -39,10 +39,10 @@ jobs:
           body: |
             This is the release version of the autosplitters in this repo at ${{ github.sha }}.
             
-            You can access the latest version of all the autosplitters at `https://github.com/mitchell-merry/livesplit-zdoom/releases/download/latest/<name>.wasm`
+            You can access the latest version of all the autosplitters at `https://github.com/mitchell-merry/autosplitters-wasm/releases/download/latest/<name>.wasm`
             
             For example, you will always find the latest version of Dismantled's autosplitter at:
-            https://github.com/mitchell-merry/livesplit-zdoom/releases/download/latest/dismantled.wasm.
+            https://github.com/mitchell-merry/autosplitters-wasm/releases/download/latest/dismantled.wasm.
 
   clippy:
     name: Check clippy lints
