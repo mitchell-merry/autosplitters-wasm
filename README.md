@@ -2,6 +2,9 @@
 
 my collection of wasm autosplitters
 
+This used to be at https://github.com/mitchell-merry/livesplit-zdoom, but I moved it here after it became more than just
+zdoom games.
+
 # MEGA DISCLAIMER
 I am bad at Rust
 
