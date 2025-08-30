@@ -33,4 +33,19 @@ jobs:
           components: rustfmt
 
       - name: Run cargo fmt
-        run: cargo fmt -- --check || true
+        run: cargo fmt -- --check
+
+  build:
+    name: Check compilation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Commit
+        uses: actions/checkout@v3
+
+      - name: Install Rust
+        uses: hecrj/setup-rust-action@v1
+        with:
+          components: rustfmt
+
+      - name: Run cargo fmt
+        run: cargo build --release --locked
