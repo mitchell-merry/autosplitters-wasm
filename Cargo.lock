@@ -20,37 +20,15 @@ checksum = "7c02d123df017efcdfbd739ef81735b36c5ba83ec3c59c80a9d7ecc718f92e50"
 [[package]]
 name = "asr"
 version = "0.1.0"
+source = "git+https://github.com/LiveSplit/asr#f9234b61d781078f13c17761ad14136939a338be"
 dependencies = [
  "arrayvec",
- "asr-derive 0.1.0",
+ "asr-derive",
  "bitflags",
  "bytemuck",
  "memchr",
  "time",
  "wasi",
-]
-
-[[package]]
-name = "asr"
-version = "0.1.0"
-source = "git+https://github.com/LiveSplit/asr#f9234b61d781078f13c17761ad14136939a338be"
-dependencies = [
- "arrayvec",
- "asr-derive 0.1.0 (git+https://github.com/LiveSplit/asr)",
- "bytemuck",
- "memchr",
- "time",
- "wasi",
-]
-
-[[package]]
-name = "asr-derive"
-version = "0.1.0"
-dependencies = [
- "heck",
- "proc-macro2",
- "quote",
- "syn",
 ]
 
 [[package]]
@@ -113,7 +91,7 @@ dependencies = [
 name = "dismantled"
 version = "0.1.0"
 dependencies = [
- "asr 0.1.0 (git+https://github.com/LiveSplit/asr)",
+ "asr",
  "helpers",
  "paste",
  "zdoom",
@@ -123,7 +101,7 @@ dependencies = [
 name = "doom_the_dark_ages"
 version = "0.1.0"
 dependencies = [
- "asr 0.1.0",
+ "asr",
  "bytemuck",
  "helpers",
  "idtech",
@@ -140,7 +118,7 @@ checksum = "95505c38b4572b2d910cecb0281560f54b440a19336cbbcb27bf6ce6adc6f5a8"
 name = "helpers"
 version = "0.1.0"
 dependencies = [
- "asr 0.1.0",
+ "asr",
  "bytemuck",
  "once_cell",
  "paste",
@@ -152,7 +130,7 @@ dependencies = [
 name = "idtech"
 version = "0.1.0"
 dependencies = [
- "asr 0.1.0",
+ "asr",
  "bitflags",
  "bytemuck",
  "helpers",
@@ -164,7 +142,7 @@ dependencies = [
 name = "kuru-kuru-kururin"
 version = "0.1.0"
 dependencies = [
- "asr 0.1.0",
+ "asr",
  "bitflags",
  "bytemuck",
  "helpers",
@@ -264,7 +242,7 @@ dependencies = [
 name = "selaco"
 version = "0.1.0"
 dependencies = [
- "asr 0.1.0 (git+https://github.com/LiveSplit/asr)",
+ "asr",
  "helpers",
  "zdoom",
 ]
@@ -293,7 +271,7 @@ dependencies = [
 name = "snap_the_sentinel"
 version = "0.1.0"
 dependencies = [
- "asr 0.1.0 (git+https://github.com/LiveSplit/asr)",
+ "asr",
  "helpers",
  "zdoom",
 ]
@@ -343,7 +321,7 @@ checksum = "ccf3ec651a847eb01de73ccad15eb7d99f80485de043efb2f370cd654f4ea44b"
 name = "zdoom"
 version = "0.1.0"
 dependencies = [
- "asr 0.1.0 (git+https://github.com/LiveSplit/asr)",
+ "asr",
  "bitflags",
  "bytemuck",
  "once_cell",

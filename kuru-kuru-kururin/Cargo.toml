@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 #asr = { git = "https://github.com/LiveSplit/asr", features = ["derive", "gba"] }
-asr = { path = "../../asr", features = ["derive", "gba", "signature"] }
+asr = { git = "https://github.com/LiveSplit/asr", features = ["derive", "gba", "signature"] }
 bitflags = { version = "2.9.3", features = ["bytemuck"] }
 bytemuck = "1.23.1"
 helpers = { path = "../helpers", features = ["gba"] }
