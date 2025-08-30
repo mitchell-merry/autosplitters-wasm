@@ -41,15 +41,31 @@ jobs:
         run: |
           cargo b --release --locked --package ${{ inputs.autosplitter }}
 
-      - name: Release
+      - name: Release autosplitter at unique tag
         if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v1
         with:
           files: target/wasm32-wasip1/release/${{ inputs.autosplitter }}.wasm
           name: ${{ inputs.autosplitter }}@${{ steps.vars.outputs.version }}
-          tag_name: ${{ inputs.autosplitter }}@latest
+          tag_name: ${{ inputs.autosplitter }}-${{ steps.vars.outputs.version }}
           body: |
             This is the release version of the ${{ inputs.autosplitter }} autosplitter at ${{ github.sha }}.
             
+            You can access this version of the autosplitter at:
+            https://github.com/mitchell-merry/autosplitters-wasm/releases/download/${{ inputs.autosplitter }}-${{ steps.vars.outputs.version }}/${{ inputs.autosplitter }}.wasm
+            
+            or you can find the latest at:
+            https://github.com/mitchell-merry/autosplitters-wasm/releases/download/${{ inputs.autosplitter }}-latest/${{ inputs.autosplitter }}.wasm
+
+      - name: Release autosplitter at latest tag
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v1
+        with:
+          files: target/wasm32-wasip1/release/${{ inputs.autosplitter }}.wasm
+          name: ${{ inputs.autosplitter }}
+          tag_name: ${{ inputs.autosplitter }}-latest
+          body: |
+            This is the latest release version of the ${{ inputs.autosplitter }} autosplitter.
+            
             You can access the latest version of the autosplitter at:
-            https://github.com/mitchell-merry/autosplitters-wasm/releases/download/${{ inputs.autosplitter }}%40latest/${{ inputs.autosplitter }}.wasm
+            https://github.com/mitchell-merry/autosplitters-wasm/releases/download/${{ inputs.autosplitter }}-latest/${{ inputs.autosplitter }}.wasm
