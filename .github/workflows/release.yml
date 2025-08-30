@@ -46,7 +46,7 @@ jobs:
 
       - name: Build
         run: |
-          cargo b --release --locked --p ${{ inputs.autosplitter }}
+          cargo b --release --locked --package ${{ inputs.autosplitter }}
 
       - name: Release
         if: github.ref == 'refs/heads/main'
