@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-asr = { git = "https://github.com/mitchell-merry/asr", branch = "mgba-mac", features = [ "derive" ] }
+asr = { git = "https://github.com/LiveSplit/asr", features = ["derive"] }
 helpers = { path = "../helpers" }
 paste = "1.0.15"
 zdoom = { path = "../zdoom" }
