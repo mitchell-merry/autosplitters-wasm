@@ -11,3 +11,5 @@ members = [
     "zdoom"
 ]
 
+[build]
+rustflags = ["-Aclippy::field_is_never_read"]

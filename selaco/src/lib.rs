@@ -1,9 +1,11 @@
+#[macro_use]
+extern crate helpers;
 use asr::settings::gui::Title;
 use asr::settings::Gui;
 use asr::string::ArrayCString;
 use asr::time::Duration;
 use asr::{future::next_tick, timer, watcher::Watcher, Address, Error, Process};
-use std::collections::{BTreeMap, HashMap, HashSet};
+use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
 use zdoom::pclass::PClass;
 use zdoom::tarray::TArray;
@@ -12,8 +14,6 @@ use zdoom::{
     GameAction, ZDoom, ZDoomVersion,
 };
 
-#[macro_use]
-extern crate helpers;
 use helpers::{impl_auto_splitter_state, split};
 
 asr::async_main!(stable);
@@ -372,7 +372,7 @@ impl Watchers {
         get_objective_status_map(&objectives, &mut map);
         get_objective_status_map(&objective_history, &mut map);
 
-        let sorted_map: BTreeMap<_, _> = map.clone().into_iter().collect();
+        // let sorted_map: BTreeMap<_, _> = map.clone().into_iter().collect();
         // timer::set_variable("objective_status", &format!("{:#?}", sorted_map));
 
         self.objective_history.update(Some(objective_history));

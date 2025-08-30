@@ -43,7 +43,7 @@ impl<'a> TypeInfoTools<'a> {
         // TODO: should the range be dynamic?
         for i in 0..2 {
             let current_project = projects_base + i * TYPE_INFO_PROJECT_SIZE;
-            let project = TypeInfoProject::init(process, current_project.clone())?;
+            let project = TypeInfoProject::init(process, current_project)?;
             projects.insert(project.name.clone(), project);
         }
 

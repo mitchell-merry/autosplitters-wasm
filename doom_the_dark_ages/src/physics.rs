@@ -16,9 +16,9 @@ impl<'a> IdVec3<'a> {
     ) -> Result<Self, Box<dyn Error>> {
         let c = idtech.get_class("Engine", "idVec3")?;
         Ok(IdVec3 {
-            x: path.child(&[c.get_offset("x")?]).into(),
-            y: path.child(&[c.get_offset("y")?]).into(),
-            z: path.child(&[c.get_offset("z")?]).into(),
+            x: path.child([c.get_offset("x")?]).into(),
+            y: path.child([c.get_offset("y")?]).into(),
+            z: path.child([c.get_offset("z")?]).into(),
         })
     }
 }

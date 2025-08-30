@@ -25,7 +25,7 @@ pub fn initialise_settings(ron_string: &str) -> Result<HashMap<String, bool>, Bo
     let settings = ron::from_str::<Vec<Setting>>(ron_string)?;
 
     for setting in settings.iter() {
-        initialise_setting(&setting, 0, &mut settings_map);
+        initialise_setting(setting, 0, &mut settings_map);
     }
 
     Ok(settings_map)
@@ -54,7 +54,7 @@ fn initialise_setting(
             }
 
             for ss in subsettings.as_ref().unwrap() {
-                initialise_setting(&ss, heading_level + 1, settings_defaults_map);
+                initialise_setting(ss, heading_level + 1, settings_defaults_map);
             }
         }
         Setting::BoolSetting {

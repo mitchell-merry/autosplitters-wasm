@@ -5,7 +5,6 @@ use asr::{Address, PointerSize, Process};
 use bytemuck::CheckedBitPattern;
 use once_cell::unsync::OnceCell;
 use std::error::Error;
-use std::fmt::Debug;
 use std::iter::once;
 
 pub trait Readable {
@@ -17,7 +16,7 @@ pub trait Readable {
     ) -> Result<T, Box<dyn Error>>;
 }
 
-impl<'a> Readable for Process {
+impl Readable for Process {
     fn read_pointer_path<T: CheckedBitPattern>(
         &self,
         address: impl Into<Address>,
@@ -30,7 +29,7 @@ impl<'a> Readable for Process {
 }
 
 #[cfg(feature = "gba")]
-impl<'a> Readable for Emulator {
+impl Readable for Emulator {
     fn read_pointer_path<T: CheckedBitPattern>(
         &self,
         address: impl Into<Address>,
@@ -94,7 +93,7 @@ impl<'a, R: Readable + ?Sized> PointerPath<'a, R> {
     // the first offset of the child path should not dereference
     pub fn child(&self, path: impl Into<Vec<u64>>) -> Self {
         // im so dumb dude i dontcare shut up
-        let (original_last, original_prefix) = self.path.split_last().unwrap_or_else(|| (&0, &[]));
+        let (original_last, original_prefix) = self.path.split_last().unwrap_or((&0, &[]));
         let path = path.into();
         let (child_prefix, rest) = path.split_first().expect("child path is empty");
         let child_prefix = *child_prefix;
@@ -107,8 +106,8 @@ impl<'a, R: Readable + ?Sized> PointerPath<'a, R> {
             pointer_size: self.pointer_size,
             base_address: self.base_address,
             path: original_prefix
-                .to_owned()
-                .into_iter()
+                .iter()
+                .copied()
                 .chain(once(new_middle_offset))
                 .chain(rest.to_owned())
                 .collect::<Vec<_>>(),
@@ -123,7 +122,7 @@ impl<'a, R: Readable + ?Sized> PointerPath<'a, R> {
     }
 
     pub fn read<T: CheckedBitPattern>(&self) -> Result<T, Box<dyn Error>> {
-        let valid_path = if self.path.len() > 0 {
+        let valid_path = if !self.path.is_empty() {
             &self.path
         } else {
             &[0x0].into()
@@ -132,11 +131,11 @@ impl<'a, R: Readable + ?Sized> PointerPath<'a, R> {
         self.readable
             .read_pointer_path(self.base_address, self.pointer_size, valid_path)
             .map_err(|e| {
-                let pointer_name = self.name.clone().unwrap_or(String::from(&format!(
+                let pointer_name = self.name.clone().unwrap_or(format!(
                     "unnamed pointer path (0x{:?}, {:?})",
                     self.base_address, valid_path
-                )));
-                SimpleError::wrap(&format!("error while reading {pointer_name}"), e).into()
+                ));
+                SimpleError::wrap(format!("error while reading {pointer_name}"), e).into()
             })
     }
 }
@@ -179,12 +178,12 @@ impl<'a, R: Readable + ?Sized, T: CheckedBitPattern> MemoryWatcher<'a, R, T> {
                     Err(e) => e,
                 };
 
-                return match self.default {
+                match self.default {
                     Some(default) => Ok(default),
                     None => Err(err),
-                };
+                }
             })
-            .map(|x| x.clone())
+            .copied()
     }
 
     pub fn old(&self) -> Option<T> {

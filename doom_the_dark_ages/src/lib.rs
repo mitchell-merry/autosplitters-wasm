@@ -4,7 +4,6 @@ use asr::{future::next_tick, Process};
 use bytemuck::CheckedBitPattern;
 use helpers::memory::scan_rel;
 use helpers::pointer::{Invalidatable, MemoryWatcher, PointerPath};
-use idtech;
 use std::error::Error;
 
 use crate::player::IdPlayer;
@@ -51,7 +50,7 @@ async fn on_attach(process: &Process) -> Result<(), Box<dyn Error>> {
 
     let mut memory = Memory::init(process, idtech)?;
 
-    loop {
+    while process.is_open() {
         let state = &memory.state;
         if state.changed()? {
             asr::print_message(&format!(
@@ -61,8 +60,8 @@ async fn on_attach(process: &Process) -> Result<(), Box<dyn Error>> {
             ))
         }
 
-        let player = &memory.player;
-        let vel_x = player.velocity.x.current().unwrap_or(0f32);
+        // let player = &memory.player;
+        // let vel_x = player.velocity.x.current().unwrap_or(0f32);
 
         // Prepare for the next iteration
         memory.invalidate();
@@ -72,6 +71,7 @@ async fn on_attach(process: &Process) -> Result<(), Box<dyn Error>> {
 
     Ok(())
 }
+
 struct Memory<'a> {
     state: MemoryWatcher<'a, Process, IdGameSystemLocalState>,
     player: IdPlayer<'a>,
@@ -98,14 +98,14 @@ impl<'a> Memory<'a> {
             state: MemoryWatcher::<_, IdGameSystemLocalState>::new(
                 process,
                 game_system_local,
-                &[idtech.get_offset("Game", "idGameSystemLocal", "state")?],
+                [idtech.get_offset("Game", "idGameSystemLocal", "state")?],
             ),
             player: IdPlayer::init(
                 &idtech,
                 PointerPath::new(
                     process,
                     game_system_local,
-                    &[
+                    [
                         idtech.get_offset("Game", "idGameSystemLocal", "mapInstance")?,
                         0x1988,
                         0xC0,

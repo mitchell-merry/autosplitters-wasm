@@ -65,7 +65,7 @@ pub fn get_setting(
     }
 
     if let Some(default_value) = setting_defaults.get(key) {
-        return Ok(default_value.clone());
+        return Ok(*default_value);
     }
 
     Err(SimpleError::from(&format!(

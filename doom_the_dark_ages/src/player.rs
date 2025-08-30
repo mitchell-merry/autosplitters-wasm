@@ -20,7 +20,7 @@ impl<'a> IdPlayer<'a> {
         Ok(IdPlayer {
             velocity: IdVec3::init(
                 idtech,
-                path.child(&[
+                path.child([
                     player_c.get_offset("idPlayerPhysicsInfo")?,
                     player_physics_c.get_offset("current")?
                         + player_state_c.get_offset("velocity")?,

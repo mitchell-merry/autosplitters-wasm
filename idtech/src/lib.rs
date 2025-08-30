@@ -31,7 +31,7 @@ impl<'a> IdTech<'a> {
             "  => found typeinfo instance at 0x{typeinfo_instance:?}"
         ));
 
-        if (typeinfo_instance == Address::NULL) {
+        if typeinfo_instance == Address::NULL {
             return Err(SimpleError::from("idtech: the typeinfo instance is null").into());
         }
 
@@ -53,7 +53,7 @@ impl<'a> IdTech<'a> {
         variable_name: &str,
     ) -> Result<u64, Box<dyn Error>> {
         let class = self.get_class(project_name, class_name)?;
-        Ok(class.get_variable(variable_name)?.get_offset()?.clone())
+        Ok(*class.get_variable(variable_name)?.get_offset()?)
     }
 
     pub fn get_class(

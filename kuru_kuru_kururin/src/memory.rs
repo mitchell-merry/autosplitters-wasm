@@ -66,29 +66,29 @@ pub struct Watchers<'a> {
 
 impl<'a> Watchers<'a> {
     pub fn init(emulator: &'a Emulator) -> Self {
-        let base = PointerPath::new32(emulator, 0x3004420_u64, &[]);
+        let base = PointerPath::new32(emulator, 0x3004420_u64, []);
         // some more things:
         // 0x4 - save file slot
 
         // probably some instance of "level"?
-        let some_important_thing = base.child(&[0x18, 0x0]);
+        let some_important_thing = base.child([0x18, 0x0]);
 
-        let world: MemoryWatcher<_, _> = base.child(&[0x0]).named("world").into();
-        let sub_level: MemoryWatcher<_, _> = base.child(&[0x1]).named("sub level").into();
-        let game_mode: MemoryWatcher<_, _> = base.child(&[0x16]).named("game mode").into();
+        let world: MemoryWatcher<_, _> = base.child([0x0]).named("world").into();
+        let sub_level: MemoryWatcher<_, _> = base.child([0x1]).named("sub level").into();
+        let game_mode: MemoryWatcher<_, _> = base.child([0x16]).named("game mode").into();
 
         // 0x30059c0 + 0x24,0x26,0x34,0x28
 
-        let time: MemoryWatcher<_, _> = some_important_thing.child(&[0xB8]).named("time").into();
-        let flags: MemoryWatcher<_, _> = some_important_thing.child(&[0xBC]).named("flags").into();
+        let time: MemoryWatcher<_, _> = some_important_thing.child([0xB8]).named("time").into();
+        let flags: MemoryWatcher<_, _> = some_important_thing.child([0xBC]).named("flags").into();
 
-        let state: MemoryWatcher<_, _> = PointerPath::new32(emulator, 0x3000dca_u64, &[])
+        let state: MemoryWatcher<_, _> = PointerPath::new32(emulator, 0x3000dca_u64, [])
             .named("state")
             .into();
-        let substate: MemoryWatcher<_, _> = PointerPath::new32(emulator, 0x3000dcb_u64, &[])
+        let substate: MemoryWatcher<_, _> = PointerPath::new32(emulator, 0x3000dcb_u64, [])
             .named("substate")
             .into();
-        let input_flags: MemoryWatcher<_, _> = PointerPath::new32(emulator, 0x3000dec_u64, &[])
+        let input_flags: MemoryWatcher<_, _> = PointerPath::new32(emulator, 0x3000dec_u64, [])
             .named("buttons")
             .into();
 

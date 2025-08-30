@@ -1,3 +1,5 @@
+#[macro_use]
+extern crate helpers;
 use asr::settings::gui::Title;
 use asr::settings::Gui;
 use asr::{future::next_tick, print_message, timer, watcher::Watcher, Error, Process};
@@ -7,8 +9,6 @@ use zdoom::{
     GameAction, ZDoom, ZDoomVersion,
 };
 
-#[macro_use]
-extern crate helpers;
 use helpers::{impl_auto_splitter_state, split};
 
 asr::async_main!(stable);
@@ -100,16 +100,15 @@ async fn on_attach(process: &Process, settings: &mut Settings) -> Result<(), Err
 
         let (old, current) = states.unwrap();
 
-        if timer::state() == timer::TimerState::NotRunning {
-            if current.level == "E1M1"
-                && current.player_pos.x == 64.0
-                && current.player_pos.y == -848.0
-                && old.gameaction == GameAction::NewGame
-                && current.gameaction == GameAction::Nothing
-            {
-                completed_splits = HashSet::new();
-                timer::start();
-            }
+        if timer::state() == timer::TimerState::NotRunning
+            && current.level == "E1M1"
+            && current.player_pos.x == 64.0
+            && current.player_pos.y == -848.0
+            && old.gameaction == GameAction::NewGame
+            && current.gameaction == GameAction::Nothing
+        {
+            completed_splits = HashSet::new();
+            timer::start();
         }
 
         if timer::state() == timer::TimerState::Running {
@@ -125,7 +124,7 @@ async fn on_attach(process: &Process, settings: &mut Settings) -> Result<(), Err
 
             if let Some(old_health) = old.ocean_health {
                 if let Some(current_health) = current.ocean_health {
-                    if settings.ocean_death && old_health > 0 && current_health <= 0 {
+                    if settings.ocean_death && old_health > 0 && current_health == 0 {
                         split(&String::from("ocean_death"), &mut completed_splits);
                     }
                 }
@@ -156,8 +155,8 @@ pub fn get_ocean_health(process: &Process, zdoom: &mut ZDoom) -> Option<u32> {
         Ok(process.read::<u32>(ocean + actor_health_offset)?)
     })();
 
-    if res.is_ok() {
-        return Some(res.unwrap());
+    if let Ok(health) = res {
+        return Some(health);
     }
 
     None

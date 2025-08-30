@@ -1,18 +1,16 @@
-#[macro_use]
 extern crate helpers;
 mod memory;
 
 use crate::memory::Watchers;
 use asr::emulator::gba::Emulator;
 use asr::future::next_tick;
-use asr::settings::Gui;
 use asr::time::Duration;
 use asr::timer::{
     pause_game_time, resume_game_time, set_game_time, set_variable, start, state, TimerState,
 };
-use bitflags::{bitflags, Flags};
+use bitflags::bitflags;
 use bytemuck::{CheckedBitPattern, Pod, Zeroable};
-use helpers::pointer::{Invalidatable, MemoryWatcher};
+use helpers::pointer::MemoryWatcher;
 use helpers::settings::initialise_settings;
 use helpers::{better_split, get_setting};
 use std::collections::{HashMap, HashSet};
@@ -20,9 +18,6 @@ use std::error::Error;
 use std::fmt::Debug;
 
 asr::async_main!(stable);
-
-#[derive(Gui)]
-struct Settings {}
 
 async fn main() {
     std::panic::set_hook(Box::new(|panic_info| {
@@ -102,12 +97,7 @@ fn flag_just_enabled(
         None => return Ok(false),
     };
 
-    let current = match flags_watcher.current() {
-        Ok(x) => x,
-        Err(e) => return Err(e),
-    };
-
-    Ok(!old.contains(flag) && current.contains(flag))
+    Ok(!old.contains(flag) && flags_watcher.current()?.contains(flag))
 }
 
 async fn on_attach(
@@ -172,7 +162,7 @@ async fn on_attach(
                 watchers.world.current()?,
                 watchers.sub_level.current()?
             );
-            let _ = better_split(key, &settings_defaults, &mut completed_splits);
+            let _ = better_split(key, settings_defaults, &mut completed_splits);
         }
     }
 
@@ -194,7 +184,7 @@ fn should_start(
     }
 
     // IL start
-    if get_setting("il_mode", &settings_defaults)?
+    if get_setting("il_mode", settings_defaults)?
         && flag_just_enabled(&watchers.flags, GameFlags::HasStarted)?
     {
         return Ok(true);

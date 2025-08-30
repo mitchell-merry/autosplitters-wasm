@@ -125,7 +125,7 @@ impl<'a> PClass<'a> {
         let fields = self.fields()?;
         let mut sorted_fields = Vec::<PField<'a>>::new();
 
-        for (_name, field) in fields {
+        for field in fields.values() {
             sorted_fields.push(field.to_owned());
         }
 
@@ -274,7 +274,7 @@ impl<'a> PField<'a> {
             .get_or_try_init(|| self.process.read(self.address + PFIELD_OFFSET))
     }
 
-    pub fn ptype(&self) -> Result<&PType, Error> {
+    pub fn ptype(&self) -> Result<&PType<'a>, Error> {
         self.ptype.get_or_try_init(|| {
             let ptype_address: Address =
                 self.process.read::<u64>(self.address + PFIELD_TYPE)?.into();
@@ -370,7 +370,7 @@ pub struct PType<'a> {
 }
 
 impl<'a> PType<'a> {
-    pub fn new(process: &'a Process, address: Address) -> PType {
+    pub fn new(process: &'a Process, address: Address) -> PType<'a> {
         PType {
             process,
             address,
@@ -420,7 +420,7 @@ impl<'a> PType<'a> {
         let generic =
             Regex::new(r"^(?<outer_type>.+?)<(?<inner_type>.+?)>(?<elements>\[\d+\])?$").unwrap();
 
-        return if let Some(captures) = generic.captures(name.as_str()) {
+        if let Some(captures) = generic.captures(name.as_str()) {
             let outer_type = captures["outer_type"].to_owned();
             let elements = captures.name("elements");
             let mut inner_type = PType::name_as_field_type(captures["inner_type"].to_owned())?;
@@ -452,6 +452,6 @@ impl<'a> PType<'a> {
                 x => x,
             }
             .to_owned())
-        };
+        }
     }
 }

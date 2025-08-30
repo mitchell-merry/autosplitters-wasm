@@ -87,7 +87,7 @@ impl<'a> ClassTypeInfo<'a> {
     }
 
     pub fn get_offset(&self, variable: &str) -> Result<u64, Box<dyn Error>> {
-        Ok(self.get_variable(variable)?.get_offset()?.clone())
+        Ok(*self.get_variable(variable)?.get_offset()?)
     }
 }
 
