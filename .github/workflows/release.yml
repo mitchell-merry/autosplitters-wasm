@@ -67,5 +67,5 @@ jobs:
           body: |
             This is the latest release version of the ${{ inputs.autosplitter }} autosplitter.
             
-            You can access the latest version of the autosplitter at:
+            You can always access the latest version of the autosplitter at:
             https://github.com/mitchell-merry/autosplitters-wasm/releases/download/${{ inputs.autosplitter }}-latest/${{ inputs.autosplitter }}.wasm
