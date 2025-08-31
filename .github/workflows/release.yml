@@ -7,7 +7,9 @@ on:
         description: 'The autosplitter to release.'
         required: true
         type: choice
+        default: all
         options:
+          - all
           - dismantled
           - doom_the_dark_ages
           - kuru_kuru_kururin
@@ -15,9 +17,56 @@ on:
           - snap_the_sentinel
 
 jobs:
+  build:
+    name: Get splitters to release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      matrix: ${{ steps.matrix.outputs.value }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Rust
+        uses: hecrj/setup-rust-action@v1
+        with:
+          components: rust-src
+          rust-version: stable
+          targets: wasm32-wasip1
+
+      - name: Build
+        run: |
+          if [[ ${{ inputs.autosplitter }} != "all" ]]; then
+            cargo b --release --locked --package ${{ inputs.autosplitter }}
+          else
+            cargo b --release --locked
+          fi
+
+      - name: Upload wasms as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          path: ./target/wasm32-wasip1/release/*.wasm
+          if-no-files-found: 'error'
+
+      - id: matrix
+        run: |
+          # the sed replaces newlines with commas (", "), this requires using the pattern space
+          cd ./target/wasm32-wasip1/release
+          JSON_STR_MIDDLE=$(ls *.wasm | sed ':a; N; $!ba; s/.wasm//g; s/\n/", "/g')
+          echo "value=[\"$JSON_STR_MIDDLE\"]" >> $GITHUB_OUTPUT
+
   release:
     name: Release
+    needs:
+      - build
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # https://stackoverflow.com/questions/59180385/using-an-array-of-values-to-repeat-a-step-in-github-actions-workflow
+        autosplitter: ${{ fromJSON(needs.build.outputs.matrix) }}
     permissions:
       contents: write
     steps:
@@ -30,42 +79,36 @@ jobs:
         id: vars
         run: echo "version=v$(git rev-list --count HEAD)-$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
-      - name: Install Rust
-        uses: hecrj/setup-rust-action@v1
+      - name: Download artifacts
+        uses: actions/download-artifact@v5
         with:
-          components: rust-src
-          rust-version: stable
-          targets: wasm32-wasip1
-
-      - name: Build
-        run: |
-          cargo b --release --locked --package ${{ inputs.autosplitter }}
+          pattern: '${{ matrix.autosplitter }}.wasm'
 
       - name: Release autosplitter at unique tag
         if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v1
         with:
-          files: target/wasm32-wasip1/release/${{ inputs.autosplitter }}.wasm
-          name: ${{ inputs.autosplitter }}@${{ steps.vars.outputs.version }}
-          tag_name: ${{ inputs.autosplitter }}-${{ steps.vars.outputs.version }}
+          files: ${{ matrix.autosplitter }}.wasm
+          name: ${{ matrix.autosplitter }}@${{ steps.vars.outputs.version }}
+          tag_name: ${{ matrix.autosplitter }}-${{ steps.vars.outputs.version }}
           body: |
-            This is the release version of the ${{ inputs.autosplitter }} autosplitter at ${{ github.sha }}.
+            This is the release version of the ${{ matrix.autosplitter }} autosplitter at ${{ github.sha }}.
             
             You can access this version of the autosplitter at:
-            https://github.com/mitchell-merry/autosplitters-wasm/releases/download/${{ inputs.autosplitter }}-${{ steps.vars.outputs.version }}/${{ inputs.autosplitter }}.wasm
+            https://github.com/mitchell-merry/autosplitters-wasm/releases/download/${{ matrix.autosplitter }}-${{ steps.vars.outputs.version }}/${{ matrix.autosplitter }}.wasm
             
             or you can find the latest at:
-            https://github.com/mitchell-merry/autosplitters-wasm/releases/download/${{ inputs.autosplitter }}-latest/${{ inputs.autosplitter }}.wasm
+            https://github.com/mitchell-merry/autosplitters-wasm/releases/download/${{ matrix.autosplitter }}-latest/${{ matrix.autosplitter }}.wasm
 
       - name: Release autosplitter at latest tag
         if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v1
         with:
-          files: target/wasm32-wasip1/release/${{ inputs.autosplitter }}.wasm
-          name: ${{ inputs.autosplitter }}
-          tag_name: ${{ inputs.autosplitter }}-latest
+          files: target/wasm32-wasip1/release/${{ matrix.autosplitter }}.wasm
+          name: ${{ matrix.autosplitter }}
+          tag_name: ${{ matrix.autosplitter }}-latest
           body: |
-            This is the latest release version of the ${{ inputs.autosplitter }} autosplitter.
+            This is the latest release version of the ${{ matrix.autosplitter }} autosplitter.
             
             You can always access the latest version of the autosplitter at:
-            https://github.com/mitchell-merry/autosplitters-wasm/releases/download/${{ inputs.autosplitter }}-latest/${{ inputs.autosplitter }}.wasm
+            https://github.com/mitchell-merry/autosplitters-wasm/releases/download/${{ matrix.autosplitter }}-latest/${{ matrix.autosplitter }}.wasm
