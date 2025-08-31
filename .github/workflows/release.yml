@@ -18,7 +18,7 @@ on:
 
 jobs:
   build:
-    name: Get splitters to release
+    name: Build
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -46,7 +46,7 @@ jobs:
           fi
 
       - name: Upload wasms as artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           path: ./target/wasm32-wasip1/release/*.wasm
           if-no-files-found: 'error'
