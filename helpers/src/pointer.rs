@@ -23,7 +23,7 @@ impl Readable for Process {
         pointer_size: PointerSize,
         path: &[u64],
     ) -> Result<T, Box<dyn Error>> {
-        self.read_pointer_path::<T>(address, pointer_size, &path)
+        self.read_pointer_path::<T>(address, pointer_size, path)
             .map_err(|_| SimpleError::from("unable to read value from pointer path").into())
     }
 }
@@ -117,11 +117,17 @@ impl<'a, R: Readable + ?Sized> PointerPath<'a, R> {
     pub fn child_watcher<T: CheckedBitPattern>(
         &self,
         path: impl Into<Vec<u64>>,
-    ) -> MemoryWatcher<'a, R, T> {
+    ) -> MemoryWatcher<'a, PointerPath<'a, R>, T> {
         self.child(path).into()
     }
+}
 
-    pub fn read<T: CheckedBitPattern>(&self) -> Result<T, Box<dyn Error>> {
+pub trait Readable2<'a> {
+    fn read<T: CheckedBitPattern>(&self) -> Result<T, Box<dyn Error>>;
+}
+
+impl<'a, R: Readable + ?Sized> Readable2<'a> for PointerPath<'a, R> {
+    fn read<T: CheckedBitPattern>(&self) -> Result<T, Box<dyn Error>> {
         let valid_path = if !self.path.is_empty() {
             &self.path
         } else {
@@ -144,17 +150,19 @@ pub trait Invalidatable {
     fn invalidate(&mut self);
 }
 
-pub struct MemoryWatcher<'a, R: Readable + ?Sized, T: CheckedBitPattern> {
-    path: PointerPath<'a, R>,
+pub struct MemoryWatcher<'a, R: Readable2<'a>, T: CheckedBitPattern> {
+    _phantom: std::marker::PhantomData<&'a R>,
+    source: R,
     current: OnceCell<T>,
     old: Option<T>,
     default: Option<T>,
 }
 
-impl<'a, R: Readable + ?Sized, T: CheckedBitPattern> MemoryWatcher<'a, R, T> {
-    pub fn new(readable: &'a R, base_address: Address, path: impl Into<Vec<u64>>) -> Self {
+impl<'a, R: Readable2<'a>, T: CheckedBitPattern> MemoryWatcher<'a, R, T> {
+    pub fn new(source: R) -> Self {
         MemoryWatcher {
-            path: PointerPath::new(readable, base_address, path),
+            _phantom: Default::default(),
+            source,
             current: OnceCell::new(),
             old: None,
             default: None,
@@ -163,7 +171,8 @@ impl<'a, R: Readable + ?Sized, T: CheckedBitPattern> MemoryWatcher<'a, R, T> {
 
     pub fn default_given(self, default: T) -> Self {
         MemoryWatcher {
-            path: self.path,
+            _phantom: Default::default(),
+            source: self.source,
             current: self.current,
             old: self.old,
             default: Some(default),
@@ -173,7 +182,7 @@ impl<'a, R: Readable + ?Sized, T: CheckedBitPattern> MemoryWatcher<'a, R, T> {
     pub fn current(&self) -> Result<T, Box<dyn Error>> {
         self.current
             .get_or_try_init(|| {
-                let err = match self.path.read() {
+                let err = match self.source.read() {
                     Ok(value) => return Ok(value),
                     Err(e) => e,
                 };
@@ -189,13 +198,15 @@ impl<'a, R: Readable + ?Sized, T: CheckedBitPattern> MemoryWatcher<'a, R, T> {
     pub fn old(&self) -> Option<T> {
         self.old
     }
-
-    pub fn child(&self, path: impl Into<Vec<u64>>) -> Self {
-        self.path.child(path).into()
-    }
 }
 
-impl<'a, R: Readable + ?Sized, T: CheckedBitPattern + PartialEq> MemoryWatcher<'a, R, T> {
+impl<'a, R: Readable + ?Sized, T: CheckedBitPattern> MemoryWatcher<'a, PointerPath<'a, R>, T> {
+    // pub fn child(&self, path: impl Into<Vec<u64>>) -> Self {
+    //     self.source.child(path).into()
+    // }
+}
+
+impl<'a, R: Readable2<'a>, T: CheckedBitPattern + PartialEq> MemoryWatcher<'a, R, T> {
     pub fn changed(&self) -> Result<bool, Box<dyn Error>> {
         match self.old {
             None => Ok(true),
@@ -204,10 +215,11 @@ impl<'a, R: Readable + ?Sized, T: CheckedBitPattern + PartialEq> MemoryWatcher<'
     }
 }
 
-impl<'a, R: Readable + ?Sized, T: CheckedBitPattern + Default> MemoryWatcher<'a, R, T> {
+impl<'a, R: Readable2<'a>, T: CheckedBitPattern + Default> MemoryWatcher<'a, R, T> {
     pub fn default(self) -> Self {
         MemoryWatcher {
-            path: self.path,
+            _phantom: Default::default(),
+            source: self.source,
             current: self.current,
             old: self.old,
             default: Some(T::default()),
@@ -215,7 +227,7 @@ impl<'a, R: Readable + ?Sized, T: CheckedBitPattern + Default> MemoryWatcher<'a,
     }
 }
 
-impl<'a, R: Readable + ?Sized, T: CheckedBitPattern> Invalidatable for MemoryWatcher<'a, R, T> {
+impl<'a, R: Readable2<'a>, T: CheckedBitPattern> Invalidatable for MemoryWatcher<'a, R, T> {
     fn invalidate(&mut self) {
         self.old = self.current.get().copied();
         self.current = OnceCell::new();
@@ -223,9 +235,9 @@ impl<'a, R: Readable + ?Sized, T: CheckedBitPattern> Invalidatable for MemoryWat
 }
 
 impl<'a, R: Readable + ?Sized, T: CheckedBitPattern> From<PointerPath<'a, R>>
-    for MemoryWatcher<'a, R, T>
+    for MemoryWatcher<'a, PointerPath<'a, R>, T>
 {
     fn from(value: PointerPath<'a, R>) -> Self {
-        MemoryWatcher::new(value.readable, value.base_address, value.path)
+        MemoryWatcher::new(value)
     }
 }

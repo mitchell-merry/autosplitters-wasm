@@ -10,7 +10,7 @@ use asr::timer::{
 };
 use bitflags::bitflags;
 use bytemuck::{CheckedBitPattern, Pod, Zeroable};
-use helpers::pointer::MemoryWatcher;
+use helpers::pointer::{MemoryWatcher, PointerPath};
 use helpers::settings::initialise_settings;
 use helpers::{better_split, get_setting};
 use std::collections::{HashMap, HashSet};
@@ -88,8 +88,8 @@ fn get_in_game_time(frames: u32) -> Duration {
     Duration::seconds_f32((frames as f32) / 60_f32)
 }
 
-fn flag_just_enabled(
-    flags_watcher: &MemoryWatcher<Emulator, GameFlags>,
+fn flag_just_enabled<'a>(
+    flags_watcher: &MemoryWatcher<'a, PointerPath<'a, Emulator>, GameFlags>,
     flag: GameFlags,
 ) -> Result<bool, Box<dyn Error>> {
     let old = match flags_watcher.old() {

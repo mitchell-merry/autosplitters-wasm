@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-asr = { git = "https://github.com/LiveSplit/asr", features = ["derive"] }
+asr = { git = "https://github.com/AlexKnauth/asr", branch = "mono-4", features = ["derive"] }
 helpers = { path = "../helpers" }
 zdoom = { path = "../zdoom" }
 

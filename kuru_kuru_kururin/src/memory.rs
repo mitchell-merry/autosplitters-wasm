@@ -54,14 +54,14 @@ pub enum GameState {
 }
 
 pub struct Watchers<'a> {
-    pub world: MemoryWatcher<'a, Emulator, u8>,
-    pub sub_level: MemoryWatcher<'a, Emulator, u8>,
-    pub game_mode: MemoryWatcher<'a, Emulator, GameMode>,
-    pub time: MemoryWatcher<'a, Emulator, u32>,
-    pub flags: MemoryWatcher<'a, Emulator, GameFlags>,
-    pub input_flags: MemoryWatcher<'a, Emulator, InputFlags>,
-    pub state: MemoryWatcher<'a, Emulator, GameState>,
-    pub substate: MemoryWatcher<'a, Emulator, u8>,
+    pub world: MemoryWatcher<'a, PointerPath<'a, Emulator>, u8>,
+    pub sub_level: MemoryWatcher<'a, PointerPath<'a, Emulator>, u8>,
+    pub game_mode: MemoryWatcher<'a, PointerPath<'a, Emulator>, GameMode>,
+    pub time: MemoryWatcher<'a, PointerPath<'a, Emulator>, u32>,
+    pub flags: MemoryWatcher<'a, PointerPath<'a, Emulator>, GameFlags>,
+    pub input_flags: MemoryWatcher<'a, PointerPath<'a, Emulator>, InputFlags>,
+    pub state: MemoryWatcher<'a, PointerPath<'a, Emulator>, GameState>,
+    pub substate: MemoryWatcher<'a, PointerPath<'a, Emulator>, u8>,
 }
 
 impl<'a> Watchers<'a> {

@@ -20,7 +20,7 @@ checksum = "7c02d123df017efcdfbd739ef81735b36c5ba83ec3c59c80a9d7ecc718f92e50"
 [[package]]
 name = "asr"
 version = "0.1.0"
-source = "git+https://github.com/LiveSplit/asr#16d0355b071a59a897e8bb0cc8fdc2160fd46dc4"
+source = "git+https://github.com/AlexKnauth/asr?branch=mono-4#60559967aeb2778ccf88e2ebf354251f69009845"
 dependencies = [
  "arrayvec",
  "asr-derive",
@@ -34,7 +34,7 @@ dependencies = [
 [[package]]
 name = "asr-derive"
 version = "0.1.0"
-source = "git+https://github.com/LiveSplit/asr#16d0355b071a59a897e8bb0cc8fdc2160fd46dc4"
+source = "git+https://github.com/AlexKnauth/asr?branch=mono-4#60559967aeb2778ccf88e2ebf354251f69009845"
 dependencies = [
  "heck",
  "proc-macro2",
@@ -76,6 +76,16 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+]
+
+[[package]]
+name = "cuphead"
+version = "0.1.0"
+dependencies = [
+ "asr",
+ "bytemuck",
+ "helpers",
+ "once_cell",
 ]
 
 [[package]]

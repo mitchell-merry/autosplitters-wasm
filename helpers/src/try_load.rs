@@ -7,7 +7,14 @@ where
     F: Fn() -> Fut,
     Fut: Future<Output = Result<T, Box<dyn Error>>>,
 {
-    let cooldown = Duration::from_millis(100);
+    wait_try_load_millis(load_fn, Duration::from_millis(100)).await
+}
+
+pub async fn wait_try_load_millis<T, F, Fut>(load_fn: F, cooldown: Duration) -> T
+where
+    F: Fn() -> Fut,
+    Fut: Future<Output = Result<T, Box<dyn Error>>>,
+{
     asr::print_message("=> attempting try_load");
 
     let result = loop {

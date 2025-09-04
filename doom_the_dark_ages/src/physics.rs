@@ -4,9 +4,9 @@ use idtech::IdTech;
 use std::error::Error;
 
 pub struct IdVec3<'a> {
-    pub x: MemoryWatcher<'a, Process, f32>,
-    pub y: MemoryWatcher<'a, Process, f32>,
-    pub z: MemoryWatcher<'a, Process, f32>,
+    pub x: MemoryWatcher<'a, PointerPath<'a, Process>, f32>,
+    pub y: MemoryWatcher<'a, PointerPath<'a, Process>, f32>,
+    pub z: MemoryWatcher<'a, PointerPath<'a, Process>, f32>,
 }
 
 impl<'a> IdVec3<'a> {

@@ -73,7 +73,7 @@ async fn on_attach(process: &Process) -> Result<(), Box<dyn Error>> {
 }
 
 struct Memory<'a> {
-    state: MemoryWatcher<'a, Process, IdGameSystemLocalState>,
+    state: MemoryWatcher<'a, PointerPath<'a, Process>, IdGameSystemLocalState>,
     player: IdPlayer<'a>,
 }
 
@@ -95,11 +95,12 @@ impl<'a> Memory<'a> {
         //   if they don't, it's a fatal error and we shouldn't retry
 
         Ok(Memory {
-            state: MemoryWatcher::<_, IdGameSystemLocalState>::new(
+            state: PointerPath::new(
                 process,
                 game_system_local,
                 [idtech.get_offset("Game", "idGameSystemLocal", "state")?],
-            ),
+            )
+            .into(),
             player: IdPlayer::init(
                 &idtech,
                 PointerPath::new(
