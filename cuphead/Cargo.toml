@@ -1,0 +1,22 @@
+[package]
+name = "cuphead"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+asr = { git = "https://github.com/AlexKnauth/asr", branch = "mono-4", features = ["alloc", "derive", "unity"] }
+bytemuck = "1.23.1"
+helpers = { path = "../helpers" }
+once_cell = "1.19.0"
+
+[lib]
+crate-type = ["cdylib"]
+
+[profile.release]
+lto = true
+panic = "abort"
+codegen-units = 1
+strip = true
+
+[profile.release.build-override]
+opt-level = 0
