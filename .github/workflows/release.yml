@@ -76,14 +76,16 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set outputs
-        id: vars
-        run: echo "version=v$(git rev-list --count HEAD)-$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
-
       - name: Download artifacts
         uses: actions/download-artifact@v5
         with:
           pattern: '${{ matrix.autosplitter }}.wasm'
+
+      - name: Set outputs
+        id: vars
+        run: |
+          echo "version=v$(git rev-list --count HEAD)-$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          ls
 
       - name: Release autosplitter at unique tag
         if: github.ref == 'refs/heads/main'
