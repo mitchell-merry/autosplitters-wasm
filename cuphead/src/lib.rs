@@ -10,15 +10,15 @@ use helpers::error::SimpleError;
 use helpers::pointer::{Invalidatable, MemoryWatcher, Readable2, UnityImage};
 use std::error::Error;
 use std::time::Duration;
+use crate::memory::Memory;
 
 asr::async_main!(stable);
 
-const PROCESS_NAMES: [&str; 3] = [
+const PROCESS_NAMES: [&str; 2] = [
     // Windows
     "Cuphead.exe",
     // Mac
-    "Cuphead",
-    "Hollow Knight", // testing lol
+    "Cuphead"
 ];
 
 async fn main() {
@@ -33,11 +33,17 @@ async fn main() {
 
         process
             .until_closes(async {
-                on_attach(&process).await.expect("problem? trollface");
+                let res = on_attach(&process).await;
+                if let Err(err) = res {
+                    print_message(&format!("error occuring on_attach: {}", err));
+                } else {
+                    print_message("detached from process");
+                }
             })
             .await;
     }
 }
+
 
 async fn on_attach(process: &Process) -> Result<(), Box<dyn Error>> {
     let (module, image) = helpers::try_load::wait_try_load_millis::<(Module, Image), _, _>(
@@ -58,31 +64,27 @@ async fn on_attach(process: &Process) -> Result<(), Box<dyn Error>> {
     .await;
 
     let unity = UnityImage::new(process, &module, &image);
-    let path = unity.path::<2>("SceneLoader", 0, &["_instance", "doneLoadingSceneAsync"]);
-    let mut done_loading: MemoryWatcher<_, bool> = MemoryWatcher::from(path); //.default_given(true);
+    let mut memory = Memory::new(unity);
 
     while process.is_open() {
-        // let sl_instance = classes
-        //     .scene_loader
-        //     // does not immediately exist
-        //     .wait_get_static_instance(process, &module, "_instance")
-        //     .await;
-        // let sl = scene_loader
-        //     .read(process, sl_instance)
-        //     .expect("should exist");
-
-        set_variable("is loading", &format!("{}", !done_loading.current()?));
-
-        if !done_loading.current()? {
-            pause_game_time();
-        } else {
-            resume_game_time();
-        }
-
-        // Prepare for the next iteration
-        done_loading.invalidate();
-
         next_tick().await;
+        memory.invalidate();
+
+        if let Err(err) = tick(&memory).await {
+            print_message(&format!("tick failed: {err}"));
+        }
+    }
+
+    Ok(())
+}
+
+async fn tick<'a>(memory: &Memory<'a>) -> Result<(), Box<dyn Error>> {
+    set_variable("is loading", &format!("{}", !memory.done_loading.current()?));
+
+    if !memory.done_loading.current()? {
+        pause_game_time();
+    } else {
+        resume_game_time();
     }
 
     Ok(())

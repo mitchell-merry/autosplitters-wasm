@@ -155,11 +155,11 @@ pub struct UnityImage<'a> {
 }
 
 #[cfg(feature = "unity")]
-pub struct UnityPointerPath<'a, const CAP: usize> {
+pub struct UnityPointerPath<'a> {
     process: &'a Process,
     module: &'a Module,
     image: &'a Image,
-    pointer: UnityPointer<CAP>,
+    pointer: UnityPointer<128>,
 }
 
 impl<'a> UnityImage<'a> {
@@ -171,12 +171,12 @@ impl<'a> UnityImage<'a> {
         }
     }
 
-    pub fn path<const CAP: usize>(
+    pub fn path(
         &self,
         class_name: &'static str,
         nr_of_parents: usize,
         fields: &[&'static str],
-    ) -> UnityPointerPath<'a, CAP> {
+    ) -> UnityPointerPath<'a> {
         UnityPointerPath {
             process: self.process,
             module: self.module,
@@ -187,7 +187,7 @@ impl<'a> UnityImage<'a> {
 }
 
 #[cfg(feature = "unity")]
-impl<'a, const CAP: usize> Readable2<'a> for UnityPointerPath<'a, CAP> {
+impl<'a> Readable2<'a> for UnityPointerPath<'a> {
     fn read<T: CheckedBitPattern>(&self) -> Result<T, Box<dyn Error>> {
         self.pointer
             .deref(self.process, self.module, self.image)
@@ -291,10 +291,10 @@ impl<'a, R: Readable + ?Sized, T: CheckedBitPattern> From<PointerPath<'a, R>>
     }
 }
 
-impl<'a, const CAP: usize, T: CheckedBitPattern> From<UnityPointerPath<'a, CAP>>
-    for MemoryWatcher<'a, UnityPointerPath<'a, CAP>, T>
+impl<'a, T: CheckedBitPattern> From<UnityPointerPath<'a>>
+    for MemoryWatcher<'a, UnityPointerPath<'a>, T>
 {
-    fn from(value: UnityPointerPath<'a, CAP>) -> Self {
+    fn from(value: UnityPointerPath<'a>) -> Self {
         MemoryWatcher::new(value)
     }
 }
