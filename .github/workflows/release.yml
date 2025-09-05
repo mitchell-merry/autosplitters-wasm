@@ -56,6 +56,7 @@ jobs:
         run: |
           # the sed replaces newlines with commas (", "), this requires using the pattern space
           cd ./target/wasm32-wasip1/release
+          ls *.wasm
           JSON_STR_MIDDLE=$(ls *.wasm | sed ':a; s/.wasm//g; N; $!ba; s/\n/", "/g')
           echo "value=[\"$JSON_STR_MIDDLE\"]" >> $GITHUB_OUTPUT
 
@@ -78,8 +79,11 @@ jobs:
 
       - name: Download artifacts
         uses: actions/download-artifact@v5
-        with:
-          pattern: '${{ matrix.autosplitter }}.wasm'
+        with: { }
+      #          pattern: '${{ matrix.autosplitter }}.wasm'
+
+      - name: Display structure of downloaded files
+        run: ls -R path/to/artifacts
 
       - name: Set outputs
         id: vars
