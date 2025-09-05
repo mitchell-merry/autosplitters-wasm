@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-asr = { git = "https://github.com/AlexKnauth/asr", branch = "mono-4", features = [
+asr = { workspace = true, features = [
     # "alloc", # Working with allocations.
     # "derive", # Defining your own settings structs, converting endianness, and binding to .NET classes.
     # "flags", # Working with bit flags.

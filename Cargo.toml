@@ -14,3 +14,7 @@ members = [
 
 [build]
 rustflags = ["-Aclippy::field_is_never_read"]
+
+[workspace.dependencies]
+asr = { git = "https://github.com/AlexKnauth/asr", branch = "mono-4" }
+#asr = { path = "../asr" }

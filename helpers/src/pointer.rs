@@ -1,6 +1,7 @@
 use crate::error::SimpleError;
 #[cfg(feature = "gba")]
 use asr::emulator::gba::Emulator;
+use asr::game_engine::unity::mono::{Image, Module, UnityPointer};
 use asr::{Address, PointerSize, Process};
 use bytemuck::CheckedBitPattern;
 use once_cell::unsync::OnceCell;
@@ -146,6 +147,54 @@ impl<'a, R: Readable + ?Sized> Readable2<'a> for PointerPath<'a, R> {
     }
 }
 
+#[cfg(feature = "unity")]
+pub struct UnityImage<'a> {
+    process: &'a Process,
+    module: &'a Module,
+    image: &'a Image,
+}
+
+#[cfg(feature = "unity")]
+pub struct UnityPointerPath<'a, const CAP: usize> {
+    process: &'a Process,
+    module: &'a Module,
+    image: &'a Image,
+    pointer: UnityPointer<CAP>,
+}
+
+impl<'a> UnityImage<'a> {
+    pub fn new(process: &'a Process, module: &'a Module, image: &'a Image) -> Self {
+        UnityImage {
+            process,
+            module,
+            image,
+        }
+    }
+
+    pub fn path<const CAP: usize>(
+        &self,
+        class_name: &'static str,
+        nr_of_parents: usize,
+        fields: &[&'static str],
+    ) -> UnityPointerPath<'a, CAP> {
+        UnityPointerPath {
+            process: self.process,
+            module: self.module,
+            image: self.image,
+            pointer: UnityPointer::new(class_name, nr_of_parents, fields),
+        }
+    }
+}
+
+#[cfg(feature = "unity")]
+impl<'a, const CAP: usize> Readable2<'a> for UnityPointerPath<'a, CAP> {
+    fn read<T: CheckedBitPattern>(&self) -> Result<T, Box<dyn Error>> {
+        self.pointer
+            .deref(self.process, self.module, self.image)
+            .map_err(|_| SimpleError::from("unable to read unity pointer").into())
+    }
+}
+
 pub trait Invalidatable {
     fn invalidate(&mut self);
 }
@@ -238,6 +287,14 @@ impl<'a, R: Readable + ?Sized, T: CheckedBitPattern> From<PointerPath<'a, R>>
     for MemoryWatcher<'a, PointerPath<'a, R>, T>
 {
     fn from(value: PointerPath<'a, R>) -> Self {
+        MemoryWatcher::new(value)
+    }
+}
+
+impl<'a, const CAP: usize, T: CheckedBitPattern> From<UnityPointerPath<'a, CAP>>
+    for MemoryWatcher<'a, UnityPointerPath<'a, CAP>, T>
+{
+    fn from(value: UnityPointerPath<'a, CAP>) -> Self {
         MemoryWatcher::new(value)
     }
 }
