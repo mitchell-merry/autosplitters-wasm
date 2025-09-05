@@ -1,10 +1,11 @@
-use asr::string::ArrayCString;
+use asr::string::ArrayWString;
 use helpers::pointer::{Invalidatable, MemoryWatcher, UnityImage, UnityPointerPath};
+use std::error::Error;
 
 pub struct Memory<'a> {
     pub done_loading: MemoryWatcher<'a, UnityPointerPath<'a>, bool>,
     pub in_game: MemoryWatcher<'a, UnityPointerPath<'a>, bool>,
-    pub scene: MemoryWatcher<'a, UnityPointerPath<'a>, ArrayCString<128>>,
+    pub scene: MemoryWatcher<'a, UnityPointerPath<'a>, ArrayWString<128>>,
 }
 
 impl<'a> Memory<'a> {
@@ -21,7 +22,12 @@ impl<'a> Memory<'a> {
             scene: MemoryWatcher::from(unity.path(
                 "SceneLoader",
                 0,
-                &["<SceneName>k__BackingField"],
+                &[
+                    "<SceneName>k__BackingField",
+                    // 0x14 - offset into string contents
+                    // (TODO - read this from an offsets object, and/or introduce some helper)
+                    "0x14",
+                ],
             )),
         }
     }
@@ -29,5 +35,10 @@ impl<'a> Memory<'a> {
     pub fn invalidate(&mut self) {
         self.done_loading.invalidate();
         self.in_game.invalidate();
+        self.scene.invalidate();
+    }
+
+    pub fn is_loading(&self) -> Result<bool, Box<dyn Error>> {
+        Ok(!self.done_loading.current()?)
     }
 }

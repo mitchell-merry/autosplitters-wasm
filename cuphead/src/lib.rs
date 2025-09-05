@@ -5,7 +5,7 @@ mod memory;
 use crate::memory::Memory;
 use asr::future::retry;
 use asr::game_engine::unity::mono::{Image, Module, Version};
-use asr::timer::{pause_game_time, resume_game_time, set_variable};
+use asr::timer::{pause_game_time, resume_game_time, set_variable, start, state, TimerState};
 use asr::{future::next_tick, print_message, Process};
 use helpers::error::SimpleError;
 use helpers::pointer::{Invalidatable, Readable2, UnityImage};
@@ -20,6 +20,8 @@ const PROCESS_NAMES: [&str; 2] = [
     // Mac
     "Cuphead",
 ];
+
+const SCENE_CUTSCENE_INTRO: &str = "scene_cutscene_intro";
 
 async fn main() {
     std::panic::set_hook(Box::new(|panic_info| {
@@ -83,12 +85,21 @@ async fn tick<'a>(memory: &Memory<'a>) -> Result<(), Box<dyn Error>> {
         &format!("{}", !memory.done_loading.current()?),
     );
     set_variable("in game", &format!("{}", memory.in_game.current()?));
-    set_variable(
-        "scene name",
-        &format!("{:?}", memory.scene.current()?.as_bytes()),
-    );
 
-    if !memory.done_loading.current()? {
+    let scene = String::from_utf16(memory.scene.current()?.as_slice())?;
+    set_variable("scene name", &format!("{}", scene));
+
+    if state() == TimerState::NotRunning
+        && scene == SCENE_CUTSCENE_INTRO
+        && memory.in_game.current()?
+        // just started loading
+        && !memory.done_loading.current()?
+        && memory.done_loading.old().is_some_and(|l| l)
+    {
+        start();
+    }
+
+    if memory.is_loading()? {
         pause_game_time();
     } else {
         resume_game_time();
