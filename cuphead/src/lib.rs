@@ -8,7 +8,7 @@ use asr::game_engine::unity::mono::{Image, Module, Version};
 use asr::timer::{pause_game_time, resume_game_time, set_variable};
 use asr::{future::next_tick, print_message, Process};
 use helpers::error::SimpleError;
-use helpers::pointer::{Invalidatable, MemoryWatcher, Readable2, UnityImage};
+use helpers::pointer::{Invalidatable, Readable2, UnityImage};
 use std::error::Error;
 use std::time::Duration;
 
@@ -81,6 +81,11 @@ async fn tick<'a>(memory: &Memory<'a>) -> Result<(), Box<dyn Error>> {
     set_variable(
         "is loading",
         &format!("{}", !memory.done_loading.current()?),
+    );
+    set_variable("in game", &format!("{}", memory.in_game.current()?));
+    set_variable(
+        "scene name",
+        &format!("{}", memory.scene.current()?.validate_utf8()?),
     );
 
     if !memory.done_loading.current()? {
