@@ -85,7 +85,7 @@ async fn tick<'a>(memory: &Memory<'a>) -> Result<(), Box<dyn Error>> {
     set_variable("in game", &format!("{}", memory.in_game.current()?));
     set_variable(
         "scene name",
-        &format!("{}", memory.scene.current()?.validate_utf8()?),
+        &format!("{:?}", memory.scene.current()?.as_bytes()),
     );
 
     if !memory.done_loading.current()? {

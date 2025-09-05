@@ -17,7 +17,7 @@ impl<'a> Memory<'a> {
             ))
             .default_given(true),
             in_game: MemoryWatcher::from(unity.path("PlayerData", 0, &["inGame"]))
-                .default_given(true),
+                .default_given(false),
             scene: MemoryWatcher::from(unity.path(
                 "SceneLoader",
                 0,
