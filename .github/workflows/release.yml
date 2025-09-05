@@ -56,7 +56,9 @@ jobs:
         run: |
           # the sed replaces newlines with commas (", "), this requires using the pattern space
           cd ./target/wasm32-wasip1/release
+          ls *.wasm
           JSON_STR_MIDDLE=$(ls *.wasm | sed ':a; N; $!ba; s/.wasm//g; s/\n/", "/g')
+          echo $JSON_STR_MIDDLE
           echo "value=[\"$JSON_STR_MIDDLE\"]" >> $GITHUB_OUTPUT
 
   release:
