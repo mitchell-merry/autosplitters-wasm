@@ -72,7 +72,7 @@ async fn on_attach(process: &Process) -> Result<(), Box<dyn Error>> {
         memory.invalidate();
 
         if let Err(err) = tick(&memory).await {
-            print_message(&format!("tick failed: {err}"));
+            // print_message(&format!("tick failed: {err}"));
         }
     }
 
