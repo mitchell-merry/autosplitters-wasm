@@ -2,6 +2,7 @@ extern crate helpers;
 mod classes;
 mod memory;
 
+use crate::memory::Memory;
 use asr::future::retry;
 use asr::game_engine::unity::mono::{Image, Module, Version};
 use asr::timer::{pause_game_time, resume_game_time, set_variable};
@@ -10,7 +11,6 @@ use helpers::error::SimpleError;
 use helpers::pointer::{Invalidatable, MemoryWatcher, Readable2, UnityImage};
 use std::error::Error;
 use std::time::Duration;
-use crate::memory::Memory;
 
 asr::async_main!(stable);
 
@@ -18,7 +18,7 @@ const PROCESS_NAMES: [&str; 2] = [
     // Windows
     "Cuphead.exe",
     // Mac
-    "Cuphead"
+    "Cuphead",
 ];
 
 async fn main() {
@@ -43,7 +43,6 @@ async fn main() {
             .await;
     }
 }
-
 
 async fn on_attach(process: &Process) -> Result<(), Box<dyn Error>> {
     let (module, image) = helpers::try_load::wait_try_load_millis::<(Module, Image), _, _>(
@@ -79,7 +78,10 @@ async fn on_attach(process: &Process) -> Result<(), Box<dyn Error>> {
 }
 
 async fn tick<'a>(memory: &Memory<'a>) -> Result<(), Box<dyn Error>> {
-    set_variable("is loading", &format!("{}", !memory.done_loading.current()?));
+    set_variable(
+        "is loading",
+        &format!("{}", !memory.done_loading.current()?),
+    );
 
     if !memory.done_loading.current()? {
         pause_game_time();
