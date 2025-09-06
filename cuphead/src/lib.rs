@@ -5,7 +5,9 @@ mod memory;
 use crate::memory::Memory;
 use asr::future::retry;
 use asr::game_engine::unity::mono::{Image, Module, Version};
-use asr::timer::{pause_game_time, resume_game_time, set_variable, start, state, TimerState};
+use asr::timer::{
+    pause_game_time, resume_game_time, set_variable, split, start, state, TimerState,
+};
 use asr::{future::next_tick, print_message, Process};
 use helpers::error::SimpleError;
 use helpers::pointer::{Invalidatable, Readable2, UnityImage};
@@ -84,10 +86,15 @@ async fn tick<'a>(memory: &Memory<'a>) -> Result<(), Box<dyn Error>> {
         "is loading",
         &format!("{}", !memory.done_loading.current()?),
     );
-    set_variable("in game", &format!("{}", memory.in_game.current()?));
-
     let scene = String::from_utf16(memory.scene.current()?.as_slice())?;
     set_variable("scene name", &format!("{}", scene));
+
+    set_variable("in game", &format!("{}", memory.in_game.current()?));
+    set_variable(
+        "save file index",
+        &format!("{}", memory.save_file_index.current()?),
+    );
+    set_variable("save files", &format!("{}", memory.save_files.current()?));
 
     if state() == TimerState::NotRunning
         && scene == SCENE_CUTSCENE_INTRO
@@ -99,10 +106,21 @@ async fn tick<'a>(memory: &Memory<'a>) -> Result<(), Box<dyn Error>> {
         start();
     }
 
-    if memory.is_loading()? {
-        pause_game_time();
-    } else {
-        resume_game_time();
+    if state() == TimerState::Running {
+        if memory.is_loading()? {
+            pause_game_time();
+        } else {
+            resume_game_time();
+        }
+
+        // split after scoreboard
+        if let Some(old_scene) = memory.scene.old() {
+            let old_scene = String::from_utf16(old_scene.as_slice())?;
+            let old_scene = old_scene.as_str();
+            if old_scene == "scene_win" && scene != old_scene {
+                split();
+            }
+        }
     }
 
     Ok(())
