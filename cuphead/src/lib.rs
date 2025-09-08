@@ -1,7 +1,8 @@
 extern crate helpers;
-mod classes;
+mod enums;
 mod memory;
 
+use crate::enums::Levels;
 use crate::memory::Memory;
 use asr::future::retry;
 use asr::game_engine::unity::mono::{Image, Module, Version};
@@ -83,19 +84,36 @@ async fn on_attach(process: &Process) -> Result<(), Box<dyn Error>> {
 
 async fn tick<'a>(memory: &Memory<'a>) -> Result<(), Box<dyn Error>> {
     set_variable(
-        "is loading",
-        &format!("{}", !memory.done_loading.current()?),
+        "done loading scene async",
+        &format!("{}", memory.done_loading.current()?),
+    );
+    set_variable(
+        "scene loader instance",
+        &format!("0x{}", memory.scene_loader_instance.current()?),
+    );
+    set_variable(
+        "currently loading",
+        &format!("{}", memory.currently_loading.current()?),
     );
     let scene = String::from_utf16(memory.scene.current()?.as_slice())?;
     set_variable("scene name", &format!("{}", scene));
+    let previous_scene = String::from_utf16(memory.previous_scene.current()?.as_slice())?;
+    set_variable("previous scene name", &format!("{}", previous_scene));
 
     set_variable("in game", &format!("{}", memory.in_game.current()?));
+    set_variable("current level", &format!("{:?}", memory.level.current()?));
+    set_variable("level won", &format!("{}", memory.level_won.current()?));
+    set_variable(
+        "level ending",
+        &format!("{}", memory.level_ending.current()?),
+    );
     set_variable(
         "save file index",
         &format!("{}", memory.save_file_index.current()?),
     );
     set_variable("save files", &format!("{}", memory.save_files.current()?));
 
+    // TODO: individual level mode
     if state() == TimerState::NotRunning
         && scene == SCENE_CUTSCENE_INTRO
         && memory.in_game.current()?
@@ -107,19 +125,35 @@ async fn tick<'a>(memory: &Memory<'a>) -> Result<(), Box<dyn Error>> {
     }
 
     if state() == TimerState::Running {
+        if memory.done_loading.changed()? {
+            print_message("  => done loading changed");
+        }
+
         if memory.is_loading()? {
             pause_game_time();
         } else {
             resume_game_time();
         }
 
-        // split after scoreboard
-        if let Some(old_scene) = memory.scene.old() {
-            let old_scene = String::from_utf16(old_scene.as_slice())?;
-            let old_scene = old_scene.as_str();
-            if old_scene == "scene_win" && scene != old_scene {
-                split();
-            }
+        // TODO: setting to always split on knockout instead of after scoreboard
+        // TODO: individual level mode
+        let should_split = if memory.level.current()? == Levels::Devil {
+            // split on knockout
+            memory.level_won.old().is_some_and(|w| !w) && memory.level_won.current()?
+        } else {
+            // split after scoreboard
+            let previous_scene = String::from_utf16(memory.previous_scene.current()?.as_slice())?;
+            let previous_scene = previous_scene.as_str();
+
+            // split when we start loading, this gives cleaner splits (segment timer is at 0.00 in
+            //   the loading screen)
+            previous_scene == "scene_win"
+                && memory.done_loading.changed()?
+                && memory.is_loading()?
+        };
+
+        if should_split {
+            split()
         }
     }
 
