@@ -158,7 +158,10 @@ async fn tick<'a>(memory: &Memory<'a>, settings: &mut Settings) -> Result<(), Bo
         }
 
         let level = memory.level.current()?;
-        let should_split = if let Some(target_scene) = level.split_on_scene_transition_to() {
+        let should_split = if settings.split_level_complete == LevelCompleteSetting::NoSplit {
+            // never split if the user has disabled it
+            false
+        } else if let Some(target_scene) = level.split_on_scene_transition_to() {
             // split if the level transitions out to another specific scene (e.g. tutorial)
             memory.scene.changed()? && scene == target_scene
         } else if settings.split_level_complete == LevelCompleteSetting::OnKnockout
