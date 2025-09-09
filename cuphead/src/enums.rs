@@ -79,3 +79,23 @@ pub enum Levels {
     Platforming_Level_2_2 = 1496818712,
     Platforming_Level_2_1 = 1499704951,
 }
+
+impl Levels {
+    pub fn always_split_on_knockout(&self) -> bool {
+        match self {
+            // run ends on devil kill
+            Levels::Devil |
+            // don't have scorecards
+            Levels::Mausoleum => true,
+            _ => false,
+        }
+    }
+
+    pub fn split_on_scene_transition_to(&self) -> Option<&str> {
+        match self {
+            Levels::Tutorial => Some("scene_level_house_elder_kettle"),
+            Levels::ChaliceTutorial => Some("scene_level_chalice_tutorial"),
+            _ => None,
+        }
+    }
+}

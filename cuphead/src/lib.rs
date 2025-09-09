@@ -3,7 +3,6 @@ mod enums;
 mod memory;
 mod settings;
 
-use crate::enums::Levels;
 use crate::memory::Memory;
 use crate::settings::{LevelCompleteSetting, Settings};
 use asr::future::retry;
@@ -115,14 +114,20 @@ async fn tick<'a>(memory: &Memory<'a>, settings: &mut Settings) -> Result<(), Bo
         "level ending",
         &format!("{}", memory.level_ending.current()?),
     );
-    set_variable("level time", &format!("{}", memory.level_time.current()?));
+    set_variable(
+        "level time (raw)",
+        &format!("{}", memory.level_time.current()?),
+    );
+    set_variable(
+        "level time",
+        &format!("{:.2}", memory.level_time.current()?),
+    );
     set_variable(
         "save file index",
         &format!("{}", memory.save_file_index.current()?),
     );
     set_variable("save files", &format!("{}", memory.save_files.current()?));
 
-    // TODO: individual level mode
     if state() == TimerState::NotRunning
         && ((scene == SCENE_CUTSCENE_INTRO
         && memory.in_game.current()?
@@ -152,11 +157,13 @@ async fn tick<'a>(memory: &Memory<'a>, settings: &mut Settings) -> Result<(), Bo
             resume_game_time();
         }
 
-        // TODO: setting to always split on knockout instead of after scoreboard
-        // TODO: individual level mode
-        let should_split = if settings.split_level_complete == LevelCompleteSetting::OnKnockout
+        let level = memory.level.current()?;
+        let should_split = if let Some(target_scene) = level.split_on_scene_transition_to() {
+            // split if the level transitions out to another specific scene (e.g. tutorial)
+            memory.scene.changed()? && scene == target_scene
+        } else if settings.split_level_complete == LevelCompleteSetting::OnKnockout
             || settings.individual_level_mode
-            || memory.level.current()? == Levels::Devil
+            || level.always_split_on_knockout()
         {
             // split on knockout
             memory.level_won.old().is_some_and(|w| !w) && memory.level_won.current()?
