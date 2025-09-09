@@ -14,6 +14,7 @@ pub struct Memory<'a> {
     pub level: MemoryWatcher<'a, UnityPointerPath<'a>, Levels>,
     pub level_won: MemoryWatcher<'a, UnityPointerPath<'a>, bool>,
     pub level_ending: MemoryWatcher<'a, UnityPointerPath<'a>, bool>,
+    pub level_time: MemoryWatcher<'a, UnityPointerPath<'a>, f32>,
     pub save_file_index: MemoryWatcher<'a, UnityPointerPath<'a>, u32>,
     pub save_files: MemoryWatcher<'a, UnityPointerPath<'a>, Address64>,
 }
@@ -72,6 +73,12 @@ impl<'a> Memory<'a> {
                 &["<Current>k__BackingField", "<Ending>k__BackingField"],
             ))
             .default_given(false),
+            level_time: MemoryWatcher::from(unity.path(
+                "Level",
+                0,
+                &["<Current>k__BackingField", "<LevelTime>k__BackingField"],
+            ))
+            .default_given(0f32),
             save_file_index: MemoryWatcher::from(unity.path(
                 "PlayerData",
                 0,
@@ -91,6 +98,7 @@ impl<'a> Memory<'a> {
         self.level.invalidate();
         self.level_won.invalidate();
         self.level_ending.invalidate();
+        self.level_time.invalidate();
         self.save_file_index.invalidate();
         self.save_files.invalidate();
     }
