@@ -142,9 +142,10 @@ async fn tick<'a>(memory: &Memory<'a>, settings: &mut Settings) -> Result<(), Bo
         }
 
         if settings.individual_level_mode {
+            pause_game_time();
             set_game_time(asr::time::Duration::seconds_f32(
                 memory.level_time.current()?,
-            ))
+            ));
         } else if memory.is_loading()? {
             pause_game_time();
         } else {
