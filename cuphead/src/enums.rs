@@ -1,4 +1,6 @@
+use crate::settings::Settings;
 use bytemuck::CheckedBitPattern;
+use std::collections::HashSet;
 
 // these names come from code directly
 #[derive(CheckedBitPattern, Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -91,11 +93,68 @@ impl Levels {
         }
     }
 
-    pub fn split_on_scene_transition_to(&self) -> Option<&str> {
+    pub fn split_on_scene_transition_to(&self) -> Option<HashSet<&str>> {
         match self {
-            Levels::Tutorial => Some("scene_level_house_elder_kettle"),
-            Levels::ChaliceTutorial => Some("scene_level_chalice_tutorial"),
+            Levels::Tutorial => Some(HashSet::from([
+                "scene_level_house_elder_kettle",
+                "scene_map_world_1",
+            ])),
+            Levels::ChaliceTutorial => Some(HashSet::from(["scene_level_chalice_tutorial"])),
             _ => None,
+        }
+    }
+
+    pub fn get_type(&self) -> LevelType {
+        match self {
+            Levels::Tutorial | Levels::ChaliceTutorial => LevelType::Tutorial,
+            Levels::Mausoleum => LevelType::Mausoleum,
+            Levels::Veggies
+            | Levels::Frogs
+            | Levels::Slime
+            | Levels::FlyingBlimp
+            | Levels::Flower
+            | Levels::Baroness
+            | Levels::FlyingBird
+            | Levels::FlyingGenie
+            | Levels::Clown
+            | Levels::Dragon
+            | Levels::Bee
+            | Levels::Robot
+            | Levels::SallyStagePlay
+            | Levels::Mouse
+            | Levels::Pirate
+            | Levels::FlyingMermaid
+            | Levels::Train
+            | Levels::DicePalaceMain
+            | Levels::Devil => LevelType::Boss,
+            Levels::Platforming_Level_1_1
+            | Levels::Platforming_Level_1_2
+            | Levels::Platforming_Level_2_1
+            | Levels::Platforming_Level_2_2
+            | Levels::Platforming_Level_3_1
+            | Levels::Platforming_Level_3_2 => LevelType::Platformer,
+            _ => LevelType::Unknown,
+        }
+    }
+}
+
+#[derive(Default, PartialEq, Eq)]
+pub enum LevelType {
+    #[default]
+    Unknown,
+    Tutorial,
+    Boss,
+    Platformer,
+    Mausoleum,
+}
+
+impl LevelType {
+    pub fn is_split_enabled(&self, settings: &Settings) -> bool {
+        match self {
+            LevelType::Tutorial => settings.split_tutorial,
+            LevelType::Mausoleum => settings.split_mausoleum_completion,
+            LevelType::Platformer | LevelType::Boss => settings.split_boss_completion,
+            _ => false,
         }
     }
 }

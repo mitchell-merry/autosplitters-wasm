@@ -158,18 +158,17 @@ async fn tick<'a>(memory: &Memory<'a>, settings: &mut Settings) -> Result<(), Bo
         }
 
         let level = memory.level.current()?;
-        let should_split = if settings.split_level_complete == LevelCompleteSetting::NoSplit {
-            // never split if the user has disabled it
-            false
-        } else if let Some(target_scene) = level.split_on_scene_transition_to() {
+        let should_split = if let Some(target_scenes) = level.split_on_scene_transition_to() {
             // split if the level transitions out to another specific scene (e.g. tutorial)
-            memory.scene.changed()? && scene == target_scene
+            memory.scene.changed()? && target_scenes.contains(scene.as_str())
         } else if settings.split_level_complete == LevelCompleteSetting::OnKnockout
             || settings.individual_level_mode
             || level.always_split_on_knockout()
         {
             // split on knockout
-            memory.level_won.old().is_some_and(|w| !w) && memory.level_won.current()?
+            level.get_type().is_split_enabled(settings)
+                && memory.level_won.old().is_some_and(|w| !w)
+                && memory.level_won.current()?
         } else {
             // split after scoreboard
             let previous_scene = String::from_utf16(memory.previous_scene.current()?.as_slice())?;
@@ -177,7 +176,8 @@ async fn tick<'a>(memory: &Memory<'a>, settings: &mut Settings) -> Result<(), Bo
 
             // split when we start loading, this gives cleaner splits (segment timer is at 0.00 in
             //   the loading screen)
-            previous_scene == "scene_win"
+            level.get_type().is_split_enabled(settings)
+                && previous_scene == "scene_win"
                 && memory.done_loading.changed()?
                 && memory.is_loading()?
         };
