@@ -15,6 +15,10 @@ pub struct Memory<'a> {
     pub level_won: MemoryWatcher<'a, UnityPointerPath<'a>, bool>,
     pub level_ending: MemoryWatcher<'a, UnityPointerPath<'a>, bool>,
     pub level_time: MemoryWatcher<'a, UnityPointerPath<'a>, f32>,
+    pub lsd_time: MemoryWatcher<'a, UnityPointerPath<'a>, f32>,
+    pub kd_is_first_entry: MemoryWatcher<'a, UnityPointerPath<'a>, bool>,
+    pub level_is_dice: MemoryWatcher<'a, UnityPointerPath<'a>, bool>,
+    pub level_is_dice_main: MemoryWatcher<'a, UnityPointerPath<'a>, bool>,
     pub save_file_index: MemoryWatcher<'a, UnityPointerPath<'a>, u32>,
     pub save_files: MemoryWatcher<'a, UnityPointerPath<'a>, Address64>,
 }
@@ -79,6 +83,30 @@ impl<'a> Memory<'a> {
                 &["<Current>k__BackingField", "<LevelTime>k__BackingField"],
             ))
             .default_given(0f32),
+            lsd_time: MemoryWatcher::from(unity.path(
+                "Level",
+                0,
+                &["<ScoringData>k__BackingField", "time"],
+            ))
+            .default_given(0f32),
+            kd_is_first_entry: MemoryWatcher::from(unity.path(
+                "DicePalaceMainLevelGameInfo",
+                0,
+                &["IS_FIRST_ENTRY"],
+            ))
+            .default(),
+            level_is_dice: MemoryWatcher::from(unity.path(
+                "Level",
+                0,
+                &["<IsDicePalace>k__BackingField"],
+            ))
+            .default(),
+            level_is_dice_main: MemoryWatcher::from(unity.path(
+                "Level",
+                0,
+                &["<IsDicePalaceMain>k__BackingField"],
+            ))
+            .default(),
             save_file_index: MemoryWatcher::from(unity.path(
                 "PlayerData",
                 0,
@@ -99,6 +127,10 @@ impl<'a> Memory<'a> {
         self.level_won.invalidate();
         self.level_ending.invalidate();
         self.level_time.invalidate();
+        self.lsd_time.invalidate();
+        self.kd_is_first_entry.invalidate();
+        self.level_is_dice.invalidate();
+        self.level_is_dice_main.invalidate();
         self.save_file_index.invalidate();
         self.save_files.invalidate();
     }

@@ -6,7 +6,7 @@ mod settings;
 use crate::memory::Memory;
 use crate::settings::{LevelCompleteSetting, Settings};
 use asr::future::retry;
-use asr::game_engine::unity::mono::{Image, Module, Version};
+use asr::game_engine::unity::mono::{Image, Module};
 use asr::settings::Gui;
 use asr::timer::{
     pause_game_time, reset, resume_game_time, set_game_time, set_variable, split, start, state,
@@ -57,7 +57,7 @@ async fn on_attach(process: &Process, settings: &mut Settings) -> Result<(), Box
     let (module, image) = helpers::try_load::wait_try_load_millis::<(Module, Image), _, _>(
         async || {
             print_message("  => loading module");
-            let module = Module::attach(process, Version::V1Cattrs)
+            let module = Module::attach_auto_detect(process)
                 .ok_or(SimpleError::from("mono module not found"))?;
             print_message("  => module loaded, loading image");
             let image = module
@@ -104,6 +104,7 @@ async fn tick<'a>(memory: &Memory<'a>, settings: &mut Settings) -> Result<(), Bo
     );
     let scene = String::from_utf16(memory.scene.current()?.as_slice())?;
     set_variable("scene name", &format!("{}", scene));
+    print_message("b");
     let previous_scene = String::from_utf16(memory.previous_scene.current()?.as_slice())?;
     set_variable("previous scene name", &format!("{}", previous_scene));
 
@@ -116,11 +117,27 @@ async fn tick<'a>(memory: &Memory<'a>, settings: &mut Settings) -> Result<(), Bo
     );
     set_variable(
         "level time (raw)",
-        &format!("{}", memory.level_time.current()?),
+        &format!(
+            "{}",
+            f32::trunc(memory.level_time.current()? * 100.0) / 100.0
+        ),
     );
     set_variable(
         "level time",
         &format!("{:.2}", memory.level_time.current()?),
+    );
+    set_variable("lsd time (raw)", &format!("{}", memory.lsd_time.current()?));
+    set_variable(
+        "kd is first retry",
+        &format!("{}", memory.kd_is_first_entry.current()?),
+    );
+    set_variable(
+        "is dice palace",
+        &format!("{}", memory.level_is_dice.current()?),
+    );
+    set_variable(
+        "is dice palace main",
+        &format!("{}", memory.level_is_dice_main.current()?),
     );
     set_variable(
         "save file index",
@@ -136,7 +153,8 @@ async fn tick<'a>(memory: &Memory<'a>, settings: &mut Settings) -> Result<(), Bo
         && memory.done_loading.old().is_some_and(|l| l))
             || (settings.individual_level_mode
                 && memory.level_time.old().is_some_and(|t| t == 0f32)
-                && memory.level_time.current()? > 0f32))
+                && memory.level_time.current()? > 0f32
+                && (!memory.level_is_dice.current()? || memory.lsd_time.current()? == 0f32)))
     {
         start();
     }
@@ -148,9 +166,14 @@ async fn tick<'a>(memory: &Memory<'a>, settings: &mut Settings) -> Result<(), Bo
 
         if settings.individual_level_mode {
             pause_game_time();
-            set_game_time(asr::time::Duration::seconds_f32(
-                memory.level_time.current()?,
-            ));
+
+            let time = if memory.level_won.current()? {
+                memory.lsd_time.current()?
+            } else {
+                memory.level_time.current()? + memory.lsd_time.current()?
+            };
+
+            set_game_time(asr::time::Duration::seconds_f32(time));
         } else if memory.is_loading()? {
             pause_game_time();
         } else {
@@ -186,10 +209,19 @@ async fn tick<'a>(memory: &Memory<'a>, settings: &mut Settings) -> Result<(), Bo
             split();
         }
 
-        if settings.individual_level_mode
-            && memory.level_time.old().is_some_and(|t| t > 0f32)
-            && memory.level_time.current()? == 0f32
-        {
+        let should_reset = if settings.individual_level_mode {
+            if memory.level_is_dice.current()? {
+                memory.kd_is_first_entry.old().is_some_and(|f| !f)
+                    && memory.kd_is_first_entry.current()?
+            } else {
+                memory.level_time.old().is_some_and(|t| t > 0f32)
+                    && memory.level_time.current()? == 0f32
+            }
+        } else {
+            false
+        };
+
+        if should_reset {
             reset();
         }
     }
