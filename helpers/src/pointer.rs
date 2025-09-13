@@ -258,7 +258,7 @@ impl<'a, R: Readable + ?Sized, T: CheckedBitPattern> MemoryWatcher<'a, PointerPa
 impl<'a, R: Readable2<'a>, T: CheckedBitPattern + PartialEq> MemoryWatcher<'a, R, T> {
     pub fn changed(&self) -> Result<bool, Box<dyn Error>> {
         match self.old {
-            None => Ok(true),
+            None => Ok(false),
             Some(old) => Ok(old != self.current()?),
         }
     }

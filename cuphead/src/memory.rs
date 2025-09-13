@@ -53,7 +53,8 @@ impl<'a> Memory<'a> {
                     // (TODO - read this from an offsets object, and/or introduce some helper)
                     "0x14",
                 ],
-            )),
+            ))
+            .default(),
             previous_scene: MemoryWatcher::from(unity.path(
                 "SceneLoader",
                 0,
@@ -63,7 +64,8 @@ impl<'a> Memory<'a> {
                     // (TODO - read this from an offsets object, and/or introduce some helper)
                     "0x14",
                 ],
-            )),
+            ))
+            .default(),
 
             in_game: MemoryWatcher::from(unity.path("PlayerData", 0, &["inGame"]))
                 .default_given(false),
