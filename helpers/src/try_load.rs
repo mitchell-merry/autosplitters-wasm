@@ -33,5 +33,7 @@ where
         asr::future::sleep(cooldown).await;
     };
 
+    asr::print_message("=> try_load successful!");
+
     result
 }

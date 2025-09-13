@@ -6,7 +6,7 @@ mod settings;
 use crate::memory::Memory;
 use crate::settings::{LevelCompleteSetting, Settings};
 use asr::future::retry;
-use asr::game_engine::unity::mono::Version::V1Cattrs;
+use asr::game_engine::unity::mono::Version::V1;
 use asr::game_engine::unity::mono::{Image, Module};
 use asr::settings::Gui;
 use asr::timer::{
@@ -33,6 +33,7 @@ const SCENE_CUTSCENE_INTRO: &str = "scene_cutscene_intro";
 struct MeasuredState {
     level_updated_lsd: bool,
     lsd_time: f32,
+    was_on_scorecard: bool,
 }
 
 async fn main() {
@@ -64,8 +65,8 @@ async fn on_attach(process: &Process, settings: &mut Settings) -> Result<(), Box
     let (module, image) = helpers::try_load::wait_try_load_millis::<(Module, Image), _, _>(
         async || {
             print_message("  => loading module");
-            let module = Module::attach(process, V1Cattrs)
-                .ok_or(SimpleError::from("mono module not found"))?;
+            let module =
+                Module::attach(process, V1).ok_or(SimpleError::from("mono module not found"))?;
             print_message("  => module loaded, loading image");
             let image = module
                 .get_default_image(process)
@@ -128,7 +129,10 @@ async fn tick<'a>(
     );
     let scene = String::from_utf16(memory.scene.current()?.as_slice())?;
     set_variable("scene name", &format!("{}", scene));
-    let previous_scene = String::from_utf16(memory.previous_scene.current()?.as_slice())?;
+    let previous_scene = match memory.scene.old() {
+        Some(previous_scene) => String::from_utf16(previous_scene.as_slice())?,
+        None => String::new(),
+    };
     set_variable("previous scene name", &format!("{}", previous_scene));
 
     set_variable("in game", &format!("{}", memory.in_game.current()?));
@@ -151,8 +155,8 @@ async fn tick<'a>(
     );
     set_variable("lsd time (raw)", &format!("{}", memory.lsd_time.current()?));
     set_variable(
-        "kd is first retry",
-        &format!("{}", memory.kd_is_first_entry.current()?),
+        "kd spaces moved",
+        &format!("{}", memory.kd_spaces_moved.current()?),
     );
     set_variable(
         "is dice palace",
@@ -173,19 +177,37 @@ async fn tick<'a>(
         measured_state.level_updated_lsd = true
     }
 
-    if memory.level.changed()? {
-        if memory.kd_is_first_entry.current()? {
-            measured_state.lsd_time = 0f32;
-        }
+    let level_is_resetting = if memory.level_is_dice.current()? {
+        memory.kd_spaces_moved.current()? == 0
+            && memory.is_loading()?
+            && memory.done_loading.old().is_some_and(|l| !l)
+    } else {
+        memory.level_time.old().is_some_and(|t| t > 0f32) && memory.level_time.current()? == 0f32
+    };
 
+    if level_is_resetting {
+        measured_state.lsd_time = 0f32;
         measured_state.level_updated_lsd = false;
     }
+
+    if memory.level.changed()? {
+        measured_state.level_updated_lsd = false;
+    }
+
+    if !measured_state.was_on_scorecard {
+        measured_state.was_on_scorecard = previous_scene == "scene_win" && scene != "scene_win";
+    }
+    set_variable(
+        "was on scorecard",
+        &format!("{}", measured_state.was_on_scorecard),
+    );
 
     let time = if measured_state.level_updated_lsd {
         measured_state.lsd_time
     } else {
         memory.level_time.current()? + measured_state.lsd_time
     };
+
     set_variable("level time", &format!("{:.2}", time));
     set_variable(
         "lsd time better",
@@ -245,29 +267,23 @@ async fn tick<'a>(
             // split when we start loading, this gives cleaner splits (segment timer is at 0.00 in
             //   the loading screen)
             level.get_type().is_split_enabled(settings)
-                && previous_scene == "scene_win"
+                && measured_state.was_on_scorecard
                 && memory.done_loading.changed()?
                 && memory.is_loading()?
         };
+
+        if measured_state.was_on_scorecard
+            && memory.done_loading.changed()?
+            && memory.is_loading()?
+        {
+            measured_state.was_on_scorecard = false;
+        }
 
         if should_split {
             split();
         }
 
-        let should_reset = if settings.individual_level_mode {
-            if memory.level_is_dice.current()? {
-                memory.kd_is_first_entry.current()?
-                    && memory.is_loading()?
-                    && memory.done_loading.old().is_some_and(|l| !l)
-            } else {
-                memory.level_time.old().is_some_and(|t| t > 0f32)
-                    && memory.level_time.current()? == 0f32
-            }
-        } else {
-            false
-        };
-
-        if should_reset {
+        if settings.individual_level_mode && level_is_resetting {
             reset();
         }
     }

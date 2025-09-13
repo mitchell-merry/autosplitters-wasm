@@ -16,7 +16,7 @@ pub struct Memory<'a> {
     pub level_ending: MemoryWatcher<'a, UnityPointerPath<'a>, bool>,
     pub level_time: MemoryWatcher<'a, UnityPointerPath<'a>, f32>,
     pub lsd_time: MemoryWatcher<'a, UnityPointerPath<'a>, f32>,
-    pub kd_is_first_entry: MemoryWatcher<'a, UnityPointerPath<'a>, bool>,
+    pub kd_spaces_moved: MemoryWatcher<'a, UnityPointerPath<'a>, i32>,
     pub level_is_dice: MemoryWatcher<'a, UnityPointerPath<'a>, bool>,
     pub level_is_dice_main: MemoryWatcher<'a, UnityPointerPath<'a>, bool>,
     pub save_file_index: MemoryWatcher<'a, UnityPointerPath<'a>, u32>,
@@ -51,7 +51,7 @@ impl<'a> Memory<'a> {
                     "<SceneName>k__BackingField",
                     // 0x14 - offset into string contents
                     // (TODO - read this from an offsets object, and/or introduce some helper)
-                    "0x14",
+                    "0xC",
                 ],
             ))
             .default(),
@@ -62,7 +62,7 @@ impl<'a> Memory<'a> {
                     "previousSceneName",
                     // 0x14 - offset into string contents
                     // (TODO - read this from an offsets object, and/or introduce some helper)
-                    "0x14",
+                    "0xC",
                 ],
             ))
             .default(),
@@ -91,10 +91,10 @@ impl<'a> Memory<'a> {
                 &["<ScoringData>k__BackingField", "time"],
             ))
             .default_given(0f32),
-            kd_is_first_entry: MemoryWatcher::from(unity.path(
+            kd_spaces_moved: MemoryWatcher::from(unity.path(
                 "DicePalaceMainLevelGameInfo",
                 0,
-                &["IS_FIRST_ENTRY"],
+                &["PLAYER_SPACES_MOVED"],
             ))
             .default(),
             level_is_dice: MemoryWatcher::from(unity.path(
@@ -130,7 +130,7 @@ impl<'a> Memory<'a> {
         self.level_ending.invalidate();
         self.level_time.invalidate();
         self.lsd_time.invalidate();
-        self.kd_is_first_entry.invalidate();
+        self.kd_spaces_moved.invalidate();
         self.level_is_dice.invalidate();
         self.level_is_dice_main.invalidate();
         self.save_file_index.invalidate();
