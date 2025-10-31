@@ -43,6 +43,8 @@ async fn main() {
 
     print_message("Hello, World!");
 
+    asr::set_tick_rate(40f64);
+
     let mut settings = Settings::register();
 
     loop {
@@ -119,14 +121,6 @@ async fn tick<'a>(
         "done loading scene async",
         &format!("{}", memory.done_loading.current()?),
     );
-    set_variable(
-        "scene loader instance",
-        &format!("0x{}", memory.scene_loader_instance.current()?),
-    );
-    set_variable(
-        "currently loading",
-        &format!("{}", memory.currently_loading.current()?),
-    );
     let scene = String::from_utf16(memory.scene.current()?.as_slice())?;
     set_variable("scene name", &format!("{}", scene));
     let previous_scene = match memory.scene.old() {
@@ -166,11 +160,6 @@ async fn tick<'a>(
         "is dice palace main",
         &format!("{}", memory.level_is_dice_main.current()?),
     );
-    set_variable(
-        "save file index",
-        &format!("{}", memory.save_file_index.current()?),
-    );
-    set_variable("save files", &format!("{}", memory.save_files.current()?));
 
     if memory.lsd_time.changed()? && memory.lsd_time.current()? != 0f32 {
         measured_state.lsd_time = memory.lsd_time.current()?;

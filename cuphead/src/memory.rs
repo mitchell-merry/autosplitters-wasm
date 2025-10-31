@@ -6,8 +6,6 @@ use std::error::Error;
 
 pub struct Memory<'a> {
     pub done_loading: MemoryWatcher<'a, UnityPointerPath<'a>, bool>,
-    pub scene_loader_instance: MemoryWatcher<'a, UnityPointerPath<'a>, Address64>,
-    pub currently_loading: MemoryWatcher<'a, UnityPointerPath<'a>, bool>,
     pub scene: MemoryWatcher<'a, UnityPointerPath<'a>, ArrayWString<128>>,
     pub previous_scene: MemoryWatcher<'a, UnityPointerPath<'a>, ArrayWString<128>>,
     pub in_game: MemoryWatcher<'a, UnityPointerPath<'a>, bool>,
@@ -19,8 +17,6 @@ pub struct Memory<'a> {
     pub kd_spaces_moved: MemoryWatcher<'a, UnityPointerPath<'a>, i32>,
     pub level_is_dice: MemoryWatcher<'a, UnityPointerPath<'a>, bool>,
     pub level_is_dice_main: MemoryWatcher<'a, UnityPointerPath<'a>, bool>,
-    pub save_file_index: MemoryWatcher<'a, UnityPointerPath<'a>, u32>,
-    pub save_files: MemoryWatcher<'a, UnityPointerPath<'a>, Address64>,
 }
 
 impl<'a> Memory<'a> {
@@ -30,18 +26,6 @@ impl<'a> Memory<'a> {
                 "SceneLoader",
                 0,
                 &["_instance", "doneLoadingSceneAsync"],
-            ))
-            .default_given(true),
-            scene_loader_instance: MemoryWatcher::from(unity.path(
-                "SceneLoader",
-                0,
-                &["_instance"],
-            ))
-            .default_given(0x0.into()),
-            currently_loading: MemoryWatcher::from(unity.path(
-                "SceneLoader",
-                0,
-                &["_instance", "currentlyLoading"],
             ))
             .default_given(true),
             scene: MemoryWatcher::from(unity.path(
@@ -109,19 +93,11 @@ impl<'a> Memory<'a> {
                 &["<IsDicePalaceMain>k__BackingField"],
             ))
             .default(),
-            save_file_index: MemoryWatcher::from(unity.path(
-                "PlayerData",
-                0,
-                &["_CurrentSaveFileIndex"],
-            )),
-            save_files: MemoryWatcher::from(unity.path("PlayerData", 0, &["_saveFiles"])),
         }
     }
 
     pub fn invalidate(&mut self) {
         self.done_loading.invalidate();
-        self.scene_loader_instance.invalidate();
-        self.currently_loading.invalidate();
         self.scene.invalidate();
         self.previous_scene.invalidate();
         self.in_game.invalidate();
@@ -133,8 +109,6 @@ impl<'a> Memory<'a> {
         self.kd_spaces_moved.invalidate();
         self.level_is_dice.invalidate();
         self.level_is_dice_main.invalidate();
-        self.save_file_index.invalidate();
-        self.save_files.invalidate();
     }
 
     pub fn is_loading(&self) -> Result<bool, Box<dyn Error>> {
