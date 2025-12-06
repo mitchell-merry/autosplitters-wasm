@@ -238,33 +238,29 @@ async fn tick<'a>(
         }
 
         let level = memory.level.current()?;
-        let should_split = if let Some((from_scene, target_scenes)) =
-            level.split_on_scene_transition_to()
-        {
-            // split if the level transitions out to another specific scene (e.g. tutorial)
-            memory.scene.changed()?
-                && previous_scene == from_scene
-                && target_scenes.contains(scene.as_str())
-        } else if settings.split_level_complete == LevelCompleteSetting::OnKnockout
-            || settings.individual_level_mode
-            || level.always_split_on_knockout()
-        {
-            // split on knockout
-            level.get_type().is_split_enabled(settings)
-                && memory.level_won.old().is_some_and(|w| !w)
-                && memory.level_won.current()?
-        } else {
-            // split after scoreboard
-            let previous_scene = String::from_utf16(memory.previous_scene.current()?.as_slice())?;
-            let previous_scene = previous_scene.as_str();
-
-            // split when we start loading, this gives cleaner splits (segment timer is at 0.00 in
-            //   the loading screen)
-            level.get_type().is_split_enabled(settings)
-                && measured_state.was_on_scorecard
-                && memory.done_loading.changed()?
-                && memory.is_loading()?
-        };
+        let should_split =
+            if let Some((from_scene, target_scenes)) = level.split_on_scene_transition_to() {
+                // split if the level transitions out to another specific scene (e.g. tutorial)
+                memory.scene.changed()?
+                    && previous_scene == from_scene
+                    && target_scenes.contains(scene.as_str())
+            } else if settings.split_level_complete == LevelCompleteSetting::OnKnockout
+                || settings.individual_level_mode
+                || level.always_split_on_knockout()
+            {
+                // split on knockout
+                level.get_type().is_split_enabled(settings)
+                    && memory.level_won.old().is_some_and(|w| !w)
+                    && memory.level_won.current()?
+            } else {
+                // split after scoreboard
+                // split when we start loading, this gives cleaner splits (segment timer is at 0.00 in
+                //   the loading screen)
+                level.get_type().is_split_enabled(settings)
+                    && measured_state.was_on_scorecard
+                    && memory.done_loading.changed()?
+                    && memory.is_loading()?
+            };
 
         if measured_state.was_on_scorecard
             && memory.done_loading.changed()?
