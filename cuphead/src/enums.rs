@@ -93,13 +93,16 @@ impl Levels {
         }
     }
 
-    pub fn split_on_scene_transition_to(&self) -> Option<HashSet<&str>> {
+    pub fn split_on_scene_transition_to(&self) -> Option<(&str, HashSet<&str>)> {
         match self {
-            Levels::Tutorial => Some(HashSet::from([
-                "scene_level_house_elder_kettle",
-                "scene_map_world_1",
-            ])),
-            Levels::ChaliceTutorial => Some(HashSet::from(["scene_level_chalice_tutorial"])),
+            Levels::Tutorial => Some((
+                "scene_level_tutorial",
+                HashSet::from(["scene_level_house_elder_kettle", "scene_map_world_1"]),
+            )),
+            Levels::ChaliceTutorial => Some((
+                "scene_level_chalice_tutorial",
+                HashSet::from(["scene_map_world_DLC"]),
+            )),
             _ => None,
         }
     }

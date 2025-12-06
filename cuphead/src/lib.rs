@@ -238,9 +238,13 @@ async fn tick<'a>(
         }
 
         let level = memory.level.current()?;
-        let should_split = if let Some(target_scenes) = level.split_on_scene_transition_to() {
+        let should_split = if let Some((from_scene, target_scenes)) =
+            level.split_on_scene_transition_to()
+        {
             // split if the level transitions out to another specific scene (e.g. tutorial)
-            memory.scene.changed()? && target_scenes.contains(scene.as_str())
+            memory.scene.changed()?
+                && previous_scene == from_scene
+                && target_scenes.contains(scene.as_str())
         } else if settings.split_level_complete == LevelCompleteSetting::OnKnockout
             || settings.individual_level_mode
             || level.always_split_on_knockout()
