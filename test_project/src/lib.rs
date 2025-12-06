@@ -32,7 +32,7 @@ async fn main() {
             .until_closes(async {
                 let res = on_attach(&process).await;
                 if let Err(err) = res {
-                    print_message(&format!("error occuring on_attach: {}", err));
+                    print_message(&format!("error occurring on_attach: {}", err));
                 } else {
                     print_message("detached from process");
                 }

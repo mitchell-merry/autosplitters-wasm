@@ -149,17 +149,9 @@ impl<'a, R: Readable + ?Sized> Readable2<'a> for PointerPath<'a, R> {
 
 #[cfg(feature = "unity")]
 pub struct UnityImage<'a> {
-    process: &'a Process,
-    module: &'a Module,
-    image: &'a Image,
-}
-
-#[cfg(feature = "unity")]
-pub struct UnityPointerPath<'a> {
-    process: &'a Process,
-    module: &'a Module,
-    image: &'a Image,
-    pointer: UnityPointer<128>,
+    pub process: &'a Process,
+    pub module: &'a Module,
+    pub image: &'a Image,
 }
 
 impl<'a> UnityImage<'a> {
@@ -187,6 +179,13 @@ impl<'a> UnityImage<'a> {
 }
 
 #[cfg(feature = "unity")]
+pub struct UnityPointerPath<'a> {
+    process: &'a Process,
+    module: &'a Module,
+    image: &'a Image,
+    pointer: UnityPointer<128>,
+}
+
 impl<'a> Readable2<'a> for UnityPointerPath<'a> {
     fn read<T: CheckedBitPattern>(&self) -> Result<T, Box<dyn Error>> {
         self.pointer

@@ -1,8 +1,28 @@
 use crate::enums::Levels;
 use asr::string::ArrayWString;
-use asr::Address64;
+use asr::{Address64, PointerSize};
 use helpers::pointer::{Invalidatable, MemoryWatcher, UnityImage, UnityPointerPath};
 use std::error::Error;
+
+pub struct Offsets {
+    pub string_contents: &'static str,
+}
+
+impl Offsets {
+    pub fn new(size: PointerSize) -> Offsets {
+        match size {
+            PointerSize::Bit64 => Offsets {
+                string_contents: "0x14",
+            },
+            PointerSize::Bit32 => Offsets {
+                string_contents: "0xC",
+            },
+            _ => Offsets {
+                string_contents: "0x0",
+            }, // n/a
+        }
+    }
+}
 
 pub struct Memory<'a> {
     pub done_loading: MemoryWatcher<'a, UnityPointerPath<'a>, bool>,
@@ -21,6 +41,7 @@ pub struct Memory<'a> {
 
 impl<'a> Memory<'a> {
     pub fn new(unity: UnityImage<'a>) -> Memory<'a> {
+        let offsets = Offsets::new(unity.module.pointer_size);
         Memory {
             done_loading: MemoryWatcher::from(unity.path(
                 "SceneLoader",
@@ -31,23 +52,13 @@ impl<'a> Memory<'a> {
             scene: MemoryWatcher::from(unity.path(
                 "SceneLoader",
                 0,
-                &[
-                    "<SceneName>k__BackingField",
-                    // 0x14 - offset into string contents
-                    // (TODO - read this from an offsets object, and/or introduce some helper)
-                    "0xC",
-                ],
+                &["<SceneName>k__BackingField", offsets.string_contents],
             ))
             .default(),
             previous_scene: MemoryWatcher::from(unity.path(
                 "SceneLoader",
                 0,
-                &[
-                    "previousSceneName",
-                    // 0x14 - offset into string contents
-                    // (TODO - read this from an offsets object, and/or introduce some helper)
-                    "0xC",
-                ],
+                &["previousSceneName", offsets.string_contents],
             ))
             .default(),
 

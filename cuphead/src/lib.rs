@@ -6,7 +6,6 @@ mod settings;
 use crate::memory::Memory;
 use crate::settings::{LevelCompleteSetting, Settings};
 use asr::future::retry;
-use asr::game_engine::unity::mono::Version::V1;
 use asr::game_engine::unity::mono::{Image, Module};
 use asr::settings::Gui;
 use asr::timer::{
@@ -67,13 +66,15 @@ async fn on_attach(process: &Process, settings: &mut Settings) -> Result<(), Box
     let (module, image) = helpers::try_load::wait_try_load_millis::<(Module, Image), _, _>(
         async || {
             print_message("  => loading module");
-            let module =
-                Module::attach(process, V1).ok_or(SimpleError::from("mono module not found"))?;
-            print_message("  => module loaded, loading image");
+            let module = Module::attach_auto_detect(process)
+                .ok_or(SimpleError::from("mono module not found"))?;
+            print_message(&format!(
+                "  => module loaded (detected {:?}, {:?}), loading image",
+                module.version, module.pointer_size
+            ));
             let image = module
                 .get_default_image(process)
                 .ok_or(SimpleError::from("default image not found"))?;
-            print_message("  => image loaded, loading scene manager");
             // let scene_manager = SceneManager::attach(process)
             //     .ok_or(SimpleError::from("scene manager not found"))?;
 
