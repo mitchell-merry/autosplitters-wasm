@@ -1,6 +1,9 @@
 use asr::settings::gui::Title;
 use asr::settings::Gui;
 
+// Note for doc comments - the first line in a /// comment is the name of the setting / value of the choice
+// The text after the double newline is the description, usually visible in a tooltip on hover
+
 #[derive(Gui, PartialEq, Eq)]
 pub enum LevelCompleteSetting {
     /// Split on knockout.
@@ -8,6 +11,7 @@ pub enum LevelCompleteSetting {
     /// Usually when the "KNOCKOUT!" text appears on screen, as soon as the boss is dead.
     #[default]
     OnKnockout,
+
     /// Split after the scorecard screen.
     ///
     /// It can be useful to split after the scorecard since it varies depending on what you do in
@@ -21,21 +25,28 @@ pub struct Settings {
     ///
     /// Use in-game-time, start time on each level attempt, reset when a level is reset or is left.
     pub individual_level_mode: bool,
+
     /// Choose how to split on level complete (ignored when individual level mode is on)
     ///
     /// This only matters for levels which have a scorecard.
     pub split_level_complete: LevelCompleteSetting,
 
-    /// Choose whether to split on each level type
+    /// Choose when to split
     #[heading_level = 0]
     _split_level_type: Title,
-    /// Split on boss completions
+
+    /// Split on boss + level completions
     #[default = true]
     pub split_boss_completion: bool,
+
     /// Split on mausoleums
-    #[default = true]
+    #[default = false]
     pub split_mausoleum_completion: bool,
+
     /// Split on tutorial completes
-    #[default = true]
+    ///
+    /// This includes the normal tutorial and Chalice's tutorial, but not the plane one.
+    /// Nobody cares about the plane one.
+    #[default = false]
     pub split_tutorial: bool,
 }
