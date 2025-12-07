@@ -5,7 +5,7 @@ mod settings;
 mod util;
 
 use crate::memory::Memory;
-use crate::settings::{LevelCompleteSetting, Settings};
+use crate::settings::Settings;
 use crate::util::format_seconds;
 use asr::future::retry;
 use asr::game_engine::unity::mono::{Image, Module};
@@ -237,9 +237,10 @@ async fn tick<'a>(
                 memory.scene.changed()?
                     && previous_scene == from_scene
                     && target_scenes.contains(scene.as_str())
-            } else if settings.split_level_complete == LevelCompleteSetting::OnKnockout
+            } else if settings
+                .split_level_complete
+                .should_split_on_knockout(level)
                 || settings.individual_level_mode
-                || level.always_split_on_knockout()
             {
                 // split on knockout
                 level.get_type().is_split_enabled(settings)

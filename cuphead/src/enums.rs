@@ -83,16 +83,6 @@ pub enum Levels {
 }
 
 impl Levels {
-    pub fn always_split_on_knockout(&self) -> bool {
-        match self {
-            // run ends on devil kill
-            Levels::Devil |
-            // don't have scorecards
-            Levels::Mausoleum => true,
-            _ => false,
-        }
-    }
-
     pub fn split_on_scene_transition_to(&self) -> Option<(&str, HashSet<&str>)> {
         match self {
             Levels::Tutorial => Some((
@@ -111,16 +101,19 @@ impl Levels {
         match self {
             Levels::Tutorial | Levels::ChaliceTutorial => LevelType::Tutorial,
             Levels::Mausoleum => LevelType::Mausoleum,
+            // isle 1
             Levels::Veggies
             | Levels::Frogs
             | Levels::Slime
             | Levels::FlyingBlimp
             | Levels::Flower
+            // isle 2
             | Levels::Baroness
             | Levels::FlyingBird
             | Levels::FlyingGenie
             | Levels::Clown
             | Levels::Dragon
+            // isle 3
             | Levels::Bee
             | Levels::Robot
             | Levels::SallyStagePlay
@@ -128,8 +121,11 @@ impl Levels {
             | Levels::Pirate
             | Levels::FlyingMermaid
             | Levels::Train
+            // isle hell
             | Levels::DicePalaceMain
-            | Levels::Devil => LevelType::Boss,
+            | Levels::Devil
+            // isle dlc
+            | Levels::Saltbaker => LevelType::Boss,
             Levels::Platforming_Level_1_1
             | Levels::Platforming_Level_1_2
             | Levels::Platforming_Level_2_1
