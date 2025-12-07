@@ -2,9 +2,11 @@ extern crate helpers;
 mod enums;
 mod memory;
 mod settings;
+mod util;
 
 use crate::memory::Memory;
 use crate::settings::{LevelCompleteSetting, Settings};
+use crate::util::format_seconds;
 use asr::future::retry;
 use asr::game_engine::unity::mono::{Image, Module};
 use asr::settings::Gui;
@@ -41,8 +43,6 @@ async fn main() {
     }));
 
     print_message("Hello, World!");
-
-    asr::set_tick_rate(40f64);
 
     let mut settings = Settings::register();
 
@@ -107,17 +107,10 @@ async fn tick<'a>(
     process: &'a Process,
     memory: &Memory<'a>,
     measured_state: &mut MeasuredState,
-    // scene_manager: &SceneManager,
     settings: &mut Settings,
 ) -> Result<(), Box<dyn Error>> {
-    // set_variable(
-    //     "scene manager current scene",
-    //     scene_manager
-    //         .get_current_scene_path::<128>(process)
-    //         .map_err(|_| Box::<dyn Error>::from(SimpleError::from("can't get it. it cant do")))?
-    //         .validate_utf8()
-    //         .unwrap_or("unknown"),
-    // );
+    // Intended for users:
+
     set_variable(
         "done loading scene async",
         &format!("{}", memory.done_loading.current()?),
@@ -198,7 +191,7 @@ async fn tick<'a>(
         memory.level_time.current()? + measured_state.lsd_time
     };
 
-    set_variable("level time", &format!("{:.2}", time));
+    set_variable("Level Time", &format_seconds(time));
     set_variable(
         "lsd time better",
         &format!("{:.2}", measured_state.lsd_time),
