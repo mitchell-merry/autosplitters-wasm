@@ -1,6 +1,6 @@
 use crate::enums::Levels;
 use asr::string::ArrayWString;
-use asr::{Address64, PointerSize};
+use asr::PointerSize;
 use helpers::pointer::{Invalidatable, MemoryWatcher, UnityImage, UnityPointerPath};
 use std::error::Error;
 
@@ -27,7 +27,6 @@ impl Offsets {
 pub struct Memory<'a> {
     pub done_loading: MemoryWatcher<'a, UnityPointerPath<'a>, bool>,
     pub scene: MemoryWatcher<'a, UnityPointerPath<'a>, ArrayWString<128>>,
-    pub previous_scene: MemoryWatcher<'a, UnityPointerPath<'a>, ArrayWString<128>>,
     pub in_game: MemoryWatcher<'a, UnityPointerPath<'a>, bool>,
     pub level: MemoryWatcher<'a, UnityPointerPath<'a>, Levels>,
     pub level_won: MemoryWatcher<'a, UnityPointerPath<'a>, bool>,
@@ -53,12 +52,6 @@ impl<'a> Memory<'a> {
                 "SceneLoader",
                 0,
                 &["<SceneName>k__BackingField", offsets.string_contents],
-            ))
-            .default(),
-            previous_scene: MemoryWatcher::from(unity.path(
-                "SceneLoader",
-                0,
-                &["previousSceneName", offsets.string_contents],
             ))
             .default(),
 
@@ -110,7 +103,6 @@ impl<'a> Memory<'a> {
     pub fn invalidate(&mut self) {
         self.done_loading.invalidate();
         self.scene.invalidate();
-        self.previous_scene.invalidate();
         self.in_game.invalidate();
         self.level.invalidate();
         self.level_won.invalidate();

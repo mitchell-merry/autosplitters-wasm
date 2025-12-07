@@ -80,9 +80,18 @@ pub struct Settings {
     #[heading_level = 0]
     _split_level_type: Title,
 
-    /// Split on boss + level completions
+    /// Split on boss + run'n'gun completions
     #[default = true]
     pub split_boss_completion: bool,
+
+    /// Split on King Dice contract cutscene (for Simple runs)
+    ///
+    /// For Simple runs, this is time end. Note you should make sure this is OFF for Regular runs.
+    /// It will split on the cutscene before KD (they are the same scene).
+    ///
+    /// Improvement item for this: https://github.com/mitchell-merry/autosplitters-wasm/issues/9
+    #[default = false]
+    pub split_kd_contract_cutscene: bool,
 
     /// Split on mausoleums
     #[default = false]

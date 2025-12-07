@@ -29,6 +29,7 @@ const PROCESS_NAMES: [&str; 2] = [
 ];
 
 const SCENE_CUTSCENE_INTRO: &str = "scene_cutscene_intro";
+const SCENE_CUTSCENE_KING_DICE_CONTRACT: &str = "scene_cutscene_kingdice";
 
 #[derive(Default)]
 struct MeasuredState {
@@ -129,7 +130,6 @@ async fn tick<'a>(
         Some(previous_scene) => String::from_utf16(previous_scene.as_slice())?,
         None => String::new(),
     };
-    set_variable("previous scene name", &format!("{}", previous_scene));
 
     set_variable("in game", &format!("{}", memory.in_game.current()?));
     set_variable("current level", &format!("{:?}", memory.level.current()?));
@@ -239,39 +239,46 @@ async fn tick<'a>(
         }
 
         let level = memory.level.current()?;
-        let should_split =
-            if let Some((from_scene, target_scenes)) = level.split_on_scene_transition_to() {
-                // split if the level transitions out to another specific scene (e.g. tutorial)
-                split_log(
-                    memory.scene.changed()?
-                        && previous_scene == from_scene
-                        && target_scenes.contains(scene.as_str()),
-                    &format!("scene change ({} -> {})", from_scene, scene.as_str()),
-                )
-            } else if settings
-                .split_level_complete
-                .should_split_on_knockout(level)
-                || settings.individual_level_mode
-            {
-                // split on knockout
-                split_log(
-                    level.is_split_enabled(settings)
-                        && memory.level_won.old().is_some_and(|w| !w)
-                        && memory.level_won.current()?,
-                    &format!("knockout ({:?})", level),
-                )
-            } else {
-                // split after scoreboard
-                // split when we start loading, this gives cleaner splits (segment timer is at 0.00 in
-                //   the loading screen)
-                split_log(
-                    level.is_split_enabled(settings)
-                        && measured_state.was_on_scorecard
-                        && memory.done_loading.changed()?
-                        && memory.is_loading()?,
-                    &format!("after scoreboard ({:?})", level),
-                )
-            };
+        let should_split = if scene == SCENE_CUTSCENE_KING_DICE_CONTRACT {
+            // we do this first because the level is whatever the previous level was (usually Train)
+            // so none of the level-specific logic makes sense
+            split_log(
+                settings.split_kd_contract_cutscene
+                    && previous_scene != SCENE_CUTSCENE_KING_DICE_CONTRACT,
+                "king dice contract",
+            )
+        } else if let Some((from_scene, target_scenes)) = level.split_on_scene_transition_to() {
+            // split if the level transitions out to another specific scene (e.g. tutorial)
+            split_log(
+                memory.scene.changed()?
+                    && previous_scene == from_scene
+                    && target_scenes.contains(scene.as_str()),
+                &format!("scene change ({} -> {})", from_scene, scene.as_str()),
+            )
+        } else if settings
+            .split_level_complete
+            .should_split_on_knockout(level)
+            || settings.individual_level_mode
+        {
+            // split on knockout
+            split_log(
+                level.is_split_enabled(settings)
+                    && memory.level_won.old().is_some_and(|w| !w)
+                    && memory.level_won.current()?,
+                &format!("knockout ({:?})", level),
+            )
+        } else {
+            // split after scoreboard
+            // split when we start loading, this gives cleaner splits (segment timer is at 0.00 in
+            //   the loading screen)
+            split_log(
+                level.is_split_enabled(settings)
+                    && measured_state.was_on_scorecard
+                    && memory.done_loading.changed()?
+                    && memory.is_loading()?,
+                &format!("after scoreboard ({:?})", level),
+            )
+        };
 
         if measured_state.was_on_scorecard
             && memory.done_loading.changed()?
