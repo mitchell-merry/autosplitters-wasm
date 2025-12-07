@@ -125,6 +125,12 @@ impl Levels {
             | Levels::DicePalaceMain
             | Levels::Devil
             // isle dlc
+            | Levels::OldMan
+            | Levels::SnowCult
+            | Levels::Airplane
+            | Levels::RumRunners
+            | Levels::FlyingCowboy
+            // | Levels::Flying
             | Levels::Saltbaker => LevelType::Boss,
             Levels::Platforming_Level_1_1
             | Levels::Platforming_Level_1_2
