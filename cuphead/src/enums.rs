@@ -1,4 +1,4 @@
-use crate::settings::Settings;
+use crate::settings::{ChessPieceSetting, Settings};
 use bytemuck::CheckedBitPattern;
 use std::collections::HashSet;
 
@@ -72,6 +72,7 @@ pub enum Levels {
     ChessBOldB = 1571650861,
     Saltbaker = 1573044456,
     ChaliceTutorial = 1580294079,
+    /// angel / devil
     Graveyard = 1616405510,
     ChessCastle = 1624358789,
     Platforming_Level_1_1 = 1464969490,
@@ -130,6 +131,7 @@ impl Levels {
             | Levels::Airplane
             | Levels::RumRunners
             | Levels::FlyingCowboy
+            | Levels::Graveyard
             // | Levels::Flying
             | Levels::Saltbaker => LevelType::Boss,
             Levels::Platforming_Level_1_1
@@ -138,7 +140,26 @@ impl Levels {
             | Levels::Platforming_Level_2_2
             | Levels::Platforming_Level_3_1
             | Levels::Platforming_Level_3_2 => LevelType::Platformer,
+            Levels::ChessPawn
+            | Levels::ChessKnight
+            | Levels::ChessBishop
+            | Levels::ChessRook
+            | Levels::ChessQueen => LevelType::ChessPiece,
             _ => LevelType::Unknown,
+        }
+    }
+
+    pub fn is_split_enabled(&self, settings: &Settings) -> bool {
+        match self.get_type() {
+            LevelType::Tutorial => settings.split_tutorial,
+            LevelType::Mausoleum => settings.split_mausoleum_completion,
+            LevelType::Platformer | LevelType::Boss => settings.split_boss_completion,
+            LevelType::ChessPiece => match settings.split_chess {
+                ChessPieceSetting::EachPiece => true,
+                ChessPieceSetting::Never => false,
+                ChessPieceSetting::GauntletOnly => *self == Levels::ChessQueen,
+            },
+            _ => false,
         }
     }
 }
@@ -151,15 +172,5 @@ pub enum LevelType {
     Boss,
     Platformer,
     Mausoleum,
-}
-
-impl LevelType {
-    pub fn is_split_enabled(&self, settings: &Settings) -> bool {
-        match self {
-            LevelType::Tutorial => settings.split_tutorial,
-            LevelType::Mausoleum => settings.split_mausoleum_completion,
-            LevelType::Platformer | LevelType::Boss => settings.split_boss_completion,
-            _ => false,
-        }
-    }
+    ChessPiece,
 }

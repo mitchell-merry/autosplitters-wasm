@@ -1,6 +1,7 @@
-use crate::enums::Levels;
+use crate::enums::{LevelType, Levels};
 use asr::settings::gui::Title;
 use asr::settings::Gui;
+
 // Note for doc comments - the first line in a /// comment is the name of the setting / value of the choice
 // The text after the double newline is the description, usually visible in a tooltip on hover
 
@@ -27,20 +28,40 @@ pub enum LevelCompleteSetting {
 
 impl LevelCompleteSetting {
     pub fn should_split_on_knockout(&self, level: Levels) -> bool {
-        // devil: runs end on devil
-        // mausoleum: no scorecard
-        // saltbaker: only if the run stops at saltbaker
-
         match self {
             LevelCompleteSetting::OnKnockout => true,
+            // for these, which levels override the setting and split on knockout anyways?
+            // devil: runs end on devil
+            // mausoleum: no scorecard
+            // saltbaker: only if the run stops at saltbaker
+            // chess pieces: no scorecard
+            // angel/devil: no scorecard
             LevelCompleteSetting::AfterScorecard => {
-                level == Levels::Devil || level == Levels::Mausoleum || level == Levels::Saltbaker
+                level == Levels::Devil
+                    || level == Levels::Saltbaker
+                    || level == Levels::Mausoleum
+                    || level.get_type() == LevelType::ChessPiece
             }
             LevelCompleteSetting::AfterScorecardIncludingSaltbaker => {
-                level == Levels::Devil || level == Levels::Mausoleum
+                level == Levels::Devil
+                    || level == Levels::Mausoleum
+                    || level.get_type() == LevelType::ChessPiece
             }
         }
     }
+}
+
+#[derive(Gui, PartialEq, Eq)]
+pub enum ChessPieceSetting {
+    /// On completion of each piece
+    #[default]
+    EachPiece,
+
+    /// On gauntlet completion (i.e. Queen only)
+    GauntletOnly,
+
+    /// Never
+    Never,
 }
 
 #[derive(Gui)]
@@ -73,4 +94,7 @@ pub struct Settings {
     /// Nobody cares about the plane one.
     #[default = false]
     pub split_tutorial: bool,
+
+    /// Split on the gauntlet
+    pub split_chess: ChessPieceSetting,
 }

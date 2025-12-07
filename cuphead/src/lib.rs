@@ -103,6 +103,14 @@ async fn on_attach(process: &Process, settings: &mut Settings) -> Result<(), Box
     Ok(())
 }
 
+fn split_log(condition: bool, string: &str) -> bool {
+    if condition {
+        print_message(&format!("split complete: {string}"));
+    }
+
+    condition
+}
+
 async fn tick<'a>(
     process: &'a Process,
     memory: &Memory<'a>,
@@ -234,26 +242,35 @@ async fn tick<'a>(
         let should_split =
             if let Some((from_scene, target_scenes)) = level.split_on_scene_transition_to() {
                 // split if the level transitions out to another specific scene (e.g. tutorial)
-                memory.scene.changed()?
-                    && previous_scene == from_scene
-                    && target_scenes.contains(scene.as_str())
+                split_log(
+                    memory.scene.changed()?
+                        && previous_scene == from_scene
+                        && target_scenes.contains(scene.as_str()),
+                    &format!("scene change ({} -> {})", from_scene, scene.as_str()),
+                )
             } else if settings
                 .split_level_complete
                 .should_split_on_knockout(level)
                 || settings.individual_level_mode
             {
                 // split on knockout
-                level.get_type().is_split_enabled(settings)
-                    && memory.level_won.old().is_some_and(|w| !w)
-                    && memory.level_won.current()?
+                split_log(
+                    level.is_split_enabled(settings)
+                        && memory.level_won.old().is_some_and(|w| !w)
+                        && memory.level_won.current()?,
+                    &format!("knockout ({:?})", level),
+                )
             } else {
                 // split after scoreboard
                 // split when we start loading, this gives cleaner splits (segment timer is at 0.00 in
                 //   the loading screen)
-                level.get_type().is_split_enabled(settings)
-                    && measured_state.was_on_scorecard
-                    && memory.done_loading.changed()?
-                    && memory.is_loading()?
+                split_log(
+                    level.is_split_enabled(settings)
+                        && measured_state.was_on_scorecard
+                        && memory.done_loading.changed()?
+                        && memory.is_loading()?,
+                    &format!("after scoreboard ({:?})", level),
+                )
             };
 
         if measured_state.was_on_scorecard
