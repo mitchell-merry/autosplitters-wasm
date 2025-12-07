@@ -3,7 +3,7 @@ mod memory;
 mod settings;
 
 use crate::memory::Memory;
-use crate::settings::{ Settings};
+use crate::settings::Settings;
 use asr::future::retry;
 use asr::game_engine::unity::mono::Version::V1;
 use asr::game_engine::unity::mono::{Image, Module};
@@ -28,8 +28,7 @@ const PROCESS_NAMES: [&str; 1] = [
 const SCENE_CUTSCENE_INTRO: &str = "scene_cutscene_intro";
 
 #[derive(Default)]
-struct MeasuredState {
-}
+struct MeasuredState {}
 
 async fn main() {
     std::panic::set_hook(Box::new(|panic_info| {
@@ -60,8 +59,8 @@ async fn on_attach(process: &Process, settings: &mut Settings) -> Result<(), Box
     let (module, image) = helpers::try_load::wait_try_load_millis::<(Module, Image), _, _>(
         async || {
             print_message("  => loading module");
-            let module =
-                Module::attach_auto_detect(process).ok_or(SimpleError::from("mono module not found"))?;
+            let module = Module::attach_auto_detect(process)
+                .ok_or(SimpleError::from("mono module not found"))?;
             print_message("  => module loaded, loading image");
             let image = module
                 .get_default_image(process)
@@ -101,10 +100,7 @@ async fn tick<'a>(
     measured_state: &mut MeasuredState,
     settings: &mut Settings,
 ) -> Result<(), Box<dyn Error>> {
-    set_variable(
-        "combat time",
-        &format!("{}", memory.combat_time.current()?),
-    );
+    set_variable("combat time", &format!("{}", memory.combat_time.current()?));
 
     Ok(())
 }
