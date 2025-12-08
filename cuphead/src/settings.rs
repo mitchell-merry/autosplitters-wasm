@@ -10,13 +10,13 @@ pub enum LevelCompleteSetting {
     /// Split on knockout.
     ///
     /// Usually when the "KNOCKOUT!" text appears on screen, as soon as the boss is dead.
-    #[default]
     OnKnockout,
 
     /// Split after the scorecard screen (except Devil/Saltbaker).
     ///
     /// It can be useful to split after the scorecard since it varies depending on what you do in
     ///   the fight (parries, health, star skip)
+    #[default]
     AfterScorecard,
 
     /// Split after the scorecard screen (except Devil only).
@@ -100,7 +100,7 @@ pub struct Settings {
     pub split_kd_contract_cutscene: bool,
 
     /// Split on mausoleums
-    #[default = false]
+    #[default = true]
     pub split_mausoleum_completion: bool,
 
     /// Split on tutorial completes
