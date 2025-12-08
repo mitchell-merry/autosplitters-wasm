@@ -76,6 +76,13 @@ pub struct Settings {
     /// This only matters for levels which have a scorecard.
     pub split_level_complete: LevelCompleteSetting,
 
+    /// Automatically reset the timer on the Title Screen
+    ///
+    /// This won't occur after every split has been completed.
+    /// Additionally, every new best segment will automatically be saved without asking for confirmation, so tread carefully.
+    #[default = false]
+    pub auto_reset: bool,
+
     /// Choose when to split
     #[heading_level = 0]
     _split_level_type: Title,

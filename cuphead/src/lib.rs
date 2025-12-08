@@ -30,6 +30,7 @@ const PROCESS_NAMES: [&str; 2] = [
 
 const SCENE_CUTSCENE_INTRO: &str = "scene_cutscene_intro";
 const SCENE_CUTSCENE_KING_DICE_CONTRACT: &str = "scene_cutscene_kingdice";
+const SCENE_TITLE_SCREEN: &str = "scene_title";
 
 #[derive(Default)]
 struct MeasuredState {
@@ -291,7 +292,8 @@ async fn tick<'a>(
             split();
         }
 
-        if settings.individual_level_mode && level_is_resetting {
+        if scene == SCENE_TITLE_SCREEN && settings.auto_reset
+            || settings.individual_level_mode && level_is_resetting {
             reset();
         }
     }
