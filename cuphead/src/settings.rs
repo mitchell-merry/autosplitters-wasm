@@ -80,6 +80,7 @@ pub struct Settings {
     ///
     /// This won't occur after every split has been completed.
     /// Additionally, every new best segment will automatically be saved without asking for confirmation, so tread carefully.
+    #[default = false]
     pub auto_reset: bool,
 
     /// Choose when to split
