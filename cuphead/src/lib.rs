@@ -223,6 +223,8 @@ async fn tick<'a>(
                 && (!memory.level_is_dice.current()? || memory.lsd_time.current()? == 0f32)))
     {
         start();
+        pause_game_time();
+        set_game_time(asr::time::Duration::seconds_f32(0f32));
     }
 
     if state() == TimerState::Running {
