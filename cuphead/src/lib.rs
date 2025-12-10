@@ -222,6 +222,7 @@ async fn tick<'a>(
                 && memory.level_time.current()? > 0f32
                 && (!memory.level_is_dice.current()? || memory.lsd_time.current()? == 0f32)))
     {
+        pause_game_time();
         start();
     }
 
