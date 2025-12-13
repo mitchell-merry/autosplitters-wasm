@@ -104,13 +104,10 @@ async fn on_attach(process: &Process, settings: &mut Settings) -> Result<(), Box
 
     let unity = UnityImage::new(process, &module, &image);
     let sm = SceneManager::attach(process)?;
-    let go = sm.get_game_object_path(
-        "scene_cutscene_devil",
-        "Cutscene",
-        &["devil_cinematic_bad_ending_transition_0001"],
-    )?;
-    print_message(&format!("{:?}", go.name()));
-    print_message(&format!("active: {:?}", go.is_active_self()));
+    // let go = sm.get_game_object_path(
+    // )?;
+    // print_message(&format!("{:?}", go.name()));
+    // print_message(&format!("active: {:?}", go.is_active_self()));
     let mut memory = Memory::new(unity, &sm)?;
     let mut measured_state = MeasuredState::default();
 

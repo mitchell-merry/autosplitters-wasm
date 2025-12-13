@@ -1,5 +1,5 @@
 use crate::enums::Levels;
-use crate::game_objects::SceneManager;
+use crate::game_objects::{GameObjectActivePath, SceneManager};
 use asr::string::ArrayWString;
 use asr::PointerSize;
 use helpers::watchers::unity::UnityImage;
@@ -45,7 +45,6 @@ pub struct Memory<'a> {
 impl<'a> Memory<'a> {
     pub fn new(unity: UnityImage<'a>, sm: &'a SceneManager) -> Result<Memory<'a>, Box<dyn Error>> {
         let offsets = Offsets::new(unity.module.pointer_size);
-        let active_scene = sm.active_scene()?;
         Ok(Memory {
             done_loading: Watcher::from(unity.path(
                 "SceneLoader",
@@ -103,17 +102,13 @@ impl<'a> Memory<'a> {
                 &["<IsDicePalaceMain>k__BackingField"],
             ))
             .default(),
-            devil_bad_ending_active: Watcher::from(active_scene.path.child([
-                0x0,
-                0x90,    // root objects
-                0x4,     // next
-                0x4,     // next
-                0x8,     // cpp game object
-                0x50,    // children
-                0x4 * 4, // [4]
-                0x1C,    // game object? or something?
-                0x32,    // activeSelf
-            ]))
+            devil_bad_ending_active: Watcher::from(GameObjectActivePath::new(
+                unity.process,
+                sm,
+                "scene_cutscene_devil",
+                "Cutscene",
+                &["devil_cinematic_bad_ending_transition_0001"],
+            ))
             .default(),
         })
     }
