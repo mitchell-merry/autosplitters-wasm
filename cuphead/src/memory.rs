@@ -27,6 +27,7 @@ impl Offsets {
 
 pub struct Memory<'a> {
     pub done_loading: Watcher<'a, bool>,
+    pub insta: Watcher<'a, u32>,
     pub scene: Watcher<'a, ArrayWString<128>>,
     pub in_game: Watcher<'a, bool>,
     pub level: Watcher<'a, Levels>,
@@ -49,6 +50,8 @@ impl<'a> Memory<'a> {
                 &["_instance", "doneLoadingSceneAsync"],
             ))
             .default_given(true),
+            insta: Watcher::from(unity.path("SceneLoader", 0, &["_instance", "camera"]))
+                .default_given(0x0),
             scene: Watcher::from(unity.path(
                 "SceneLoader",
                 0,
@@ -102,6 +105,7 @@ impl<'a> Memory<'a> {
 
     pub fn invalidate(&mut self) {
         self.done_loading.invalidate();
+        self.insta.invalidate();
         self.scene.invalidate();
         self.in_game.invalidate();
         self.level.invalidate();

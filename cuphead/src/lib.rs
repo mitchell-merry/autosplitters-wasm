@@ -77,14 +77,27 @@ async fn on_attach(process: &Process, settings: &mut Settings) -> Result<(), Box
             let image = module
                 .get_default_image(process)
                 .ok_or(SimpleError::from("default image not found"))?;
-            // let scene_manager = SceneManager::attach(process)
-            //     .ok_or(SimpleError::from("scene manager not found"))?;
 
             Ok((module, image))
         },
         std::time::Duration::from_millis(500),
     )
     .await;
+
+    // let scene_manager = SceneManager::attach(process);
+    // if let Some(scene_manager) = scene_manager {
+    //     print_message(&format!(
+    //         "current: {:?}",
+    //         scene_manager
+    //             .get_current_scene(process)
+    //             .unwrap()
+    //             .path::<128>(process, &scene_manager)
+    //             .unwrap()
+    //             .validate_utf8()
+    //     ));
+    // } else {
+    //     print_message("can't");
+    // }
 
     let unity = UnityImage::new(process, &module, &image);
     let mut memory = Memory::new(unity);
@@ -125,6 +138,7 @@ async fn tick<'a>(
         "done loading scene async",
         &format!("{}", memory.done_loading.current()?),
     );
+    set_variable("insta", &format!("{:X}", memory.insta.current()?));
     let scene = String::from_utf16(memory.scene.current()?.as_slice())?;
     set_variable("scene name", &format!("{}", scene));
     let previous_scene = match memory.scene.old() {
