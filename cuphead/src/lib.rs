@@ -1,9 +1,11 @@
 extern crate helpers;
 mod enums;
+mod game_objects;
 mod memory;
 mod settings;
 mod util;
 
+use crate::game_objects::SceneManager;
 use crate::memory::Memory;
 use crate::settings::Settings;
 use crate::util::format_seconds;
@@ -102,6 +104,9 @@ async fn on_attach(process: &Process, settings: &mut Settings) -> Result<(), Box
     let unity = UnityImage::new(process, &module, &image);
     let mut memory = Memory::new(unity);
     let mut measured_state = MeasuredState::default();
+
+    let sm = SceneManager::attach(process)?;
+    print_message(&sm.active_scene()?.name()?);
 
     while process.is_open() {
         settings.update();
