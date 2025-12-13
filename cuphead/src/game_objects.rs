@@ -1,5 +1,5 @@
 use asr::string::ArrayCString;
-use asr::{Address, Process};
+use asr::{Address, PointerSize, Process};
 use helpers::error::SimpleError;
 use helpers::pointer::{PointerPath, Readable2};
 use std::error::Error;
@@ -149,5 +149,12 @@ impl<'a> GameObject<'a> {
         }
 
         Err(SimpleError::from(&format!("could not find object {child_name} in game tree")).into())
+    }
+
+    pub fn is_active_self(&self) -> Result<bool, Box<dyn Error>> {
+        Ok(self
+            .process
+            .read_pointer_path::<bool>(self.address, PointerSize::Bit32, &[0x1C, 0x32])
+            .map_err(|_| SimpleError::from("failed reading game object activeSelf"))?)
     }
 }
