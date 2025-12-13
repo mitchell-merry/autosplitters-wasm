@@ -1,7 +1,8 @@
 use crate::enums::Levels;
+use crate::game_objects::SceneManager;
 use asr::string::ArrayWString;
-use asr::PointerSize;
-use helpers::pointer::{Invalidatable, MemoryWatcher, UnityImage, UnityPointerPath};
+use asr::{PointerSize, Process};
+use helpers::pointer::{Invalidatable, MemoryWatcher, PointerPath, UnityImage, UnityPointerPath};
 use std::error::Error;
 
 pub struct Offsets {
@@ -37,12 +38,14 @@ pub struct Memory<'a> {
     pub kd_spaces_moved: MemoryWatcher<'a, UnityPointerPath<'a>, i32>,
     pub level_is_dice: MemoryWatcher<'a, UnityPointerPath<'a>, bool>,
     pub level_is_dice_main: MemoryWatcher<'a, UnityPointerPath<'a>, bool>,
+    pub devil_bad_ending_active: MemoryWatcher<'a, PointerPath<'a, Process>, bool>,
 }
 
 impl<'a> Memory<'a> {
-    pub fn new(unity: UnityImage<'a>) -> Memory<'a> {
+    pub fn new(unity: UnityImage<'a>, sm: &'a SceneManager) -> Result<Memory<'a>, Box<dyn Error>> {
         let offsets = Offsets::new(unity.module.pointer_size);
-        Memory {
+        let active_scene = sm.active_scene()?;
+        Ok(Memory {
             done_loading: MemoryWatcher::from(unity.path(
                 "SceneLoader",
                 0,
@@ -100,7 +103,19 @@ impl<'a> Memory<'a> {
                 &["<IsDicePalaceMain>k__BackingField"],
             ))
             .default(),
-        }
+            devil_bad_ending_active: MemoryWatcher::from(active_scene.path.child([
+                0x0,
+                0x90,    // root objects
+                0x4,     // next
+                0x4,     // next
+                0x8,     // cpp game object
+                0x50,    // children
+                0x4 * 4, // [4]
+                0x1C,    // game object? or something?
+                0x32,    // activeSelf
+            ]))
+            .default(),
+        })
     }
 
     pub fn invalidate(&mut self) {
@@ -116,6 +131,7 @@ impl<'a> Memory<'a> {
         self.kd_spaces_moved.invalidate();
         self.level_is_dice.invalidate();
         self.level_is_dice_main.invalidate();
+        self.devil_bad_ending_active.invalidate();
     }
 
     pub fn is_loading(&self) -> Result<bool, Box<dyn Error>> {

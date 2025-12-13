@@ -32,6 +32,7 @@ const PROCESS_NAMES: [&str; 2] = [
 
 const SCENE_CUTSCENE_INTRO: &str = "scene_cutscene_intro";
 const SCENE_CUTSCENE_KING_DICE_CONTRACT: &str = "scene_cutscene_kingdice";
+const SCENE_CUTSCENE_DEVIL: &str = "scene_cutscene_devil";
 const SCENE_TITLE_SCREEN: &str = "scene_title";
 
 #[derive(Default)]
@@ -102,11 +103,17 @@ async fn on_attach(process: &Process, settings: &mut Settings) -> Result<(), Box
     // }
 
     let unity = UnityImage::new(process, &module, &image);
-    let mut memory = Memory::new(unity);
+    let sm = SceneManager::attach(process)?;
+    let path = sm.get_game_object_path(
+        "scene_cutscene_devil",
+        "Cutscene",
+        &["devil_cinematic_bad_ending_transition_0001"],
+    );
+    print_message(&format!("{path:?}"));
+    let mut memory = Memory::new(unity, &sm)?;
     let mut measured_state = MeasuredState::default();
 
-    let sm = SceneManager::attach(process)?;
-    print_message(&sm.active_scene()?.name()?);
+    // print_message(&sm.active_scene()?.name()?);
 
     while process.is_open() {
         settings.update();
@@ -181,6 +188,10 @@ async fn tick<'a>(
     set_variable(
         "is dice palace main",
         &format!("{}", memory.level_is_dice_main.current()?),
+    );
+    set_variable(
+        "devil bad ending active",
+        &format!("{}", memory.devil_bad_ending_active.current()?),
     );
 
     if memory.lsd_time.changed()? && memory.lsd_time.current()? != 0f32 {
@@ -267,6 +278,13 @@ async fn tick<'a>(
                 settings.split_kd_contract_cutscene
                     && previous_scene != SCENE_CUTSCENE_KING_DICE_CONTRACT,
                 "king dice contract",
+            )
+        } else if scene == SCENE_CUTSCENE_DEVIL {
+            split_log(
+                settings.split_devil_deal
+                    && memory.devil_bad_ending_active.changed()?
+                    && memory.devil_bad_ending_active.current()?,
+                "accepted devil deal",
             )
         } else if let Some((from_scene, target_scenes)) = level.split_on_scene_transition_to() {
             // split if the level transitions out to another specific scene (e.g. tutorial)
