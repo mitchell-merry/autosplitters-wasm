@@ -6,6 +6,7 @@ use asr::{Address, PointerSize, Process};
 use bytemuck::CheckedBitPattern;
 use once_cell::unsync::OnceCell;
 use std::error::Error;
+use std::fmt::{Debug, Formatter};
 use std::iter::once;
 
 pub trait Readable {
@@ -120,6 +121,16 @@ impl<'a, R: Readable + ?Sized> PointerPath<'a, R> {
         path: impl Into<Vec<u64>>,
     ) -> MemoryWatcher<'a, PointerPath<'a, R>, T> {
         self.child(path).into()
+    }
+}
+
+impl<'a, R: Readable> Debug for PointerPath<'a, R> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "PointerPath {{ root: 0x{}, path: {:X?} }}",
+            self.base_address, self.path
+        )
     }
 }
 

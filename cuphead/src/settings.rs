@@ -91,6 +91,12 @@ pub struct Settings {
     #[default = true]
     pub split_boss_completion: bool,
 
+    /// Split on taking the Devil's deal (for Bad Ending)
+    ///
+    /// You can generally leave this on, since it won't have any affect if you don't take the deal.
+    #[default = true]
+    pub split_devil_deal: bool,
+
     /// Split on King Dice contract cutscene (for Simple runs)
     ///
     /// For Simple runs, this is time end. Note you should make sure this is OFF for Regular runs.

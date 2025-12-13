@@ -1,9 +1,11 @@
 extern crate helpers;
 mod enums;
+mod game_objects;
 mod memory;
 mod settings;
 mod util;
 
+use crate::game_objects::SceneManager;
 use crate::memory::Memory;
 use crate::settings::Settings;
 use crate::util::format_seconds;
@@ -30,6 +32,7 @@ const PROCESS_NAMES: [&str; 2] = [
 
 const SCENE_CUTSCENE_INTRO: &str = "scene_cutscene_intro";
 const SCENE_CUTSCENE_KING_DICE_CONTRACT: &str = "scene_cutscene_kingdice";
+const SCENE_CUTSCENE_DEVIL: &str = "scene_cutscene_devil";
 const SCENE_TITLE_SCREEN: &str = "scene_title";
 
 #[derive(Default)]
@@ -77,8 +80,6 @@ async fn on_attach(process: &Process, settings: &mut Settings) -> Result<(), Box
             let image = module
                 .get_default_image(process)
                 .ok_or(SimpleError::from("default image not found"))?;
-            // let scene_manager = SceneManager::attach(process)
-            //     .ok_or(SimpleError::from("scene manager not found"))?;
 
             Ok((module, image))
         },
@@ -86,9 +87,33 @@ async fn on_attach(process: &Process, settings: &mut Settings) -> Result<(), Box
     )
     .await;
 
+    // let scene_manager = SceneManager::attach(process);
+    // if let Some(scene_manager) = scene_manager {
+    //     print_message(&format!(
+    //         "current: {:?}",
+    //         scene_manager
+    //             .get_current_scene(process)
+    //             .unwrap()
+    //             .path::<128>(process, &scene_manager)
+    //             .unwrap()
+    //             .validate_utf8()
+    //     ));
+    // } else {
+    //     print_message("can't");
+    // }
+
     let unity = UnityImage::new(process, &module, &image);
-    let mut memory = Memory::new(unity);
+    let sm = SceneManager::attach(process)?;
+    let path = sm.get_game_object_path(
+        "scene_cutscene_devil",
+        "Cutscene",
+        &["devil_cinematic_bad_ending_transition_0001"],
+    );
+    print_message(&format!("{path:?}"));
+    let mut memory = Memory::new(unity, &sm)?;
     let mut measured_state = MeasuredState::default();
+
+    // print_message(&sm.active_scene()?.name()?);
 
     while process.is_open() {
         settings.update();
@@ -125,6 +150,7 @@ async fn tick<'a>(
         "done loading scene async",
         &format!("{}", memory.done_loading.current()?),
     );
+    set_variable("insta", &format!("{:X}", memory.insta.current()?));
     let scene = String::from_utf16(memory.scene.current()?.as_slice())?;
     set_variable("scene name", &format!("{}", scene));
     let previous_scene = match memory.scene.old() {
@@ -162,6 +188,10 @@ async fn tick<'a>(
     set_variable(
         "is dice palace main",
         &format!("{}", memory.level_is_dice_main.current()?),
+    );
+    set_variable(
+        "devil bad ending active",
+        &format!("{}", memory.devil_bad_ending_active.current()?),
     );
 
     if memory.lsd_time.changed()? && memory.lsd_time.current()? != 0f32 {
@@ -249,6 +279,13 @@ async fn tick<'a>(
                     && previous_scene != SCENE_CUTSCENE_KING_DICE_CONTRACT,
                 "king dice contract",
             )
+        } else if scene == SCENE_CUTSCENE_DEVIL {
+            split_log(
+                settings.split_devil_deal
+                    && memory.devil_bad_ending_active.changed()?
+                    && memory.devil_bad_ending_active.current()?,
+                "accepted devil deal",
+            )
         } else if let Some((from_scene, target_scenes)) = level.split_on_scene_transition_to() {
             // split if the level transitions out to another specific scene (e.g. tutorial)
             split_log(
@@ -294,7 +331,8 @@ async fn tick<'a>(
         }
 
         if scene == SCENE_TITLE_SCREEN && settings.auto_reset
-            || settings.individual_level_mode && level_is_resetting {
+            || settings.individual_level_mode && level_is_resetting
+        {
             reset();
         }
     }
