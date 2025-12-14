@@ -2,6 +2,7 @@ use asr::string::ArrayCString;
 use asr::{Address, PointerSize, Process};
 use helpers::error::SimpleError;
 use helpers::pointer::{PointerPath, PointerPathReadable, ValueReader};
+use std::cell::Cell;
 use std::error::Error;
 
 pub struct SceneManager<'a> {
@@ -26,27 +27,6 @@ impl<'a> SceneManager<'a> {
             process: self.process,
             path: PointerPath::new32(self.process, self.address, [0x0, 0x24]),
         })
-    }
-
-    // GameObjectPath::new("scene_cutscene_devil", "Cutscene", &["devil_cinematic_bad_ending_transition_0001"]);
-    pub fn get_game_object_path(
-        &self,
-        scene: &str,
-        root_object: &str,
-        path: &[&str],
-    ) -> Result<GameObject<'a>, Box<dyn Error>> {
-        let active_scene = self.active_scene()?;
-        let active_scene_name = active_scene.name()?;
-        if scene != active_scene_name {
-            return Err(SimpleError::from(&format!("unable to get game object path, in scene {active_scene_name} while expected scene was {scene}")).into());
-        }
-
-        let mut current_game_object = active_scene.find_root_object(root_object)?;
-        for object_name in path {
-            current_game_object = current_game_object.find_child(object_name)?;
-        }
-
-        Ok(current_game_object)
     }
 }
 
@@ -101,6 +81,19 @@ impl<'a> Scene<'a> {
             // next
             root_object_node = root_object_node.child([0x0, 0x4]);
         }
+    }
+
+    pub fn find_game_object_in_scene(
+        &self,
+        root_object_name: &str,
+        path: &'static [&'static str],
+    ) -> Result<GameObject<'a>, Box<dyn Error>> {
+        let mut current_game_object = self.find_root_object(root_object_name)?;
+        for object_name in path {
+            current_game_object = current_game_object.find_child(object_name)?;
+        }
+
+        Ok(current_game_object)
     }
 }
 
@@ -165,6 +158,8 @@ pub struct GameObjectActivePath<'a> {
     scene: &'static str,
     root_object_name: &'static str,
     path: &'static [&'static str],
+
+    cached_object: Cell<Option<GameObject<'a>>>,
 }
 
 impl<'a> GameObjectActivePath<'a> {
@@ -181,18 +176,31 @@ impl<'a> GameObjectActivePath<'a> {
             scene,
             root_object_name,
             path,
+            cached_object: Cell::new(None),
         }
     }
 }
 
 impl<'a> ValueReader<'a, bool> for GameObjectActivePath<'a> {
     fn read(&self) -> Result<bool, Box<dyn Error>> {
-        let game_object = self.scene_manager.get_game_object_path(
-            self.scene,
-            self.root_object_name,
-            self.path,
-        )?;
+        let active_scene = self.scene_manager.active_scene()?;
+        let active_scene_name = active_scene.name()?;
+        if self.scene != active_scene_name {
+            self.cached_object.set(None);
 
-        game_object.is_active_self()
+            return Err(SimpleError::from(&format!("unable to get game object path, in scene {active_scene_name} while expected scene was {}", self.scene)).into());
+        }
+
+        // this is pretty jank, but we're using the cached address if one exists
+        let game_object = match self.cached_object.take() {
+            Some(game_object) => game_object,
+            None => active_scene.find_game_object_in_scene(self.root_object_name, self.path)?,
+        };
+
+        let active = game_object.is_active_self()?;
+
+        self.cached_object.set(Some(game_object));
+
+        Ok(active)
     }
 }
