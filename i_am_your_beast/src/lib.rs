@@ -5,18 +5,13 @@ mod settings;
 use crate::memory::Memory;
 use crate::settings::Settings;
 use asr::future::retry;
-use asr::game_engine::unity::mono::Version::V1;
 use asr::game_engine::unity::mono::{Image, Module};
 use asr::settings::Gui;
-use asr::timer::{
-    pause_game_time, reset, resume_game_time, set_game_time, set_variable, split, start, state,
-    TimerState,
-};
+use asr::timer::set_variable;
 use asr::{future::next_tick, print_message, Process};
 use helpers::error::SimpleError;
-use helpers::pointer::{Invalidatable, Readable2, UnityImage};
+use helpers::watchers::unity::UnityImage;
 use std::error::Error;
-use std::fmt::format;
 
 asr::async_main!(stable);
 

@@ -1,6 +1,6 @@
 use crate::physics::IdVec3;
 use asr::Process;
-use helpers::pointer::{Invalidatable, PointerPath};
+use helpers::watchers::pointer_path::PointerPath;
 use idtech::IdTech;
 use std::error::Error;
 
@@ -28,10 +28,8 @@ impl<'a> IdPlayer<'a> {
             )?,
         })
     }
-}
 
-impl<'a> Invalidatable for IdPlayer<'a> {
-    fn invalidate(&mut self) {
+    pub fn invalidate(&mut self) {
         self.velocity.invalidate();
     }
 }

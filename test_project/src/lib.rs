@@ -4,7 +4,6 @@ use asr::future::retry;
 use asr::timer::{pause_game_time, resume_game_time, start, state, TimerState};
 use asr::{future::next_tick, print_message, set_tick_rate, Process};
 use helpers::error::SimpleError;
-use helpers::pointer::Readable2;
 use std::error::Error;
 
 asr::async_main!(stable);

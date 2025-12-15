@@ -1,13 +1,14 @@
-use helpers::pointer::{Invalidatable, MemoryWatcher, UnityImage, UnityPointerPath};
+use helpers::watchers::unity::UnityImage;
+use helpers::watchers::Watcher;
 
 pub struct Memory<'a> {
-    pub combat_time: MemoryWatcher<'a, UnityPointerPath<'a>, f32>,
+    pub combat_time: Watcher<'a, f32>,
 }
 
 impl<'a> Memory<'a> {
     pub fn new(unity: UnityImage<'a>) -> Memory<'a> {
         Memory {
-            combat_time: MemoryWatcher::from(unity.path(
+            combat_time: Watcher::from(unity.path(
                 "GameManager",
                 0,
                 &["instance", "levelController", "combatTimer", "timer"],
