@@ -287,7 +287,8 @@ async fn tick<'a>(
         }
 
         if scene == SCENE_TITLE_SCREEN && settings.auto_reset
-            || settings.individual_level_mode && level_is_resetting {
+            || settings.individual_level_mode && level_is_resetting
+        {
             reset();
         }
     }
