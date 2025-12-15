@@ -282,13 +282,6 @@ async fn tick<'a>(
             )
         };
 
-        if measured_state.was_on_scorecard
-            && memory.done_loading.changed()?
-            && memory.is_loading()?
-        {
-            measured_state.was_on_scorecard = false;
-        }
-
         if should_split {
             split();
         }
@@ -297,6 +290,10 @@ async fn tick<'a>(
             || settings.individual_level_mode && level_is_resetting {
             reset();
         }
+    }
+
+    if measured_state.was_on_scorecard && memory.done_loading.changed()? && memory.is_loading()? {
+        measured_state.was_on_scorecard = false;
     }
 
     Ok(())
