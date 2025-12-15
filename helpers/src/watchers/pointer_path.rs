@@ -3,6 +3,7 @@ use crate::watchers::{ValueGetter, Watcher};
 use asr::{Address, PointerSize, Process};
 use bytemuck::CheckedBitPattern;
 use std::error::Error;
+use std::fmt::Display;
 use std::iter::once;
 
 /// A PointerPathReadable is something that can read a value by pointer path.
@@ -108,12 +109,12 @@ impl<'a, TReadable: PointerPathReadable> PointerPath<'a, TReadable> {
         }
     }
 
-    pub fn child_watcher<T: CheckedBitPattern>(&self, path: impl Into<Vec<u64>>) -> Watcher<T> {
+    pub fn child_watcher<T: CheckedBitPattern>(&self, path: impl Into<Vec<u64>>) -> Watcher<'a, T> {
         self.child(path).into()
     }
 }
 
-impl<'a, T: CheckedBitPattern, TReadable: PointerPathReadable> ValueGetter<T>
+impl<'a, TReadable: PointerPathReadable, T: CheckedBitPattern> ValueGetter<T>
     for PointerPath<'a, TReadable>
 {
     fn get(&self) -> Result<T, Box<dyn Error>> {
@@ -125,6 +126,7 @@ impl<'a, T: CheckedBitPattern, TReadable: PointerPathReadable> ValueGetter<T>
 
         self.readable
             .read_pointer_path(self.base_address, self.pointer_size, valid_path)
+            .map_err(|e| SimpleError::wrap(format!("failed to read pointer path {self}"), e).into())
     }
 }
 
@@ -133,5 +135,23 @@ impl<'a, TReadable: PointerPathReadable, T: CheckedBitPattern> From<PointerPath<
 {
     fn from(value: PointerPath<'a, TReadable>) -> Self {
         Watcher::new(Box::new(value))
+    }
+}
+
+impl<'a, TReadable: PointerPathReadable> Display for PointerPath<'a, TReadable> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let offsets = self
+            .path
+            .iter()
+            .map(|offset| format!("0x{:x}", offset))
+            .collect::<Vec<_>>()
+            .join(", ");
+        let path = format!("0x{}, {}", self.base_address, offsets);
+
+        if let Some(name) = &self.name {
+            write!(f, "({name}: {path})")
+        } else {
+            write!(f, "({path})")
+        }
     }
 }
