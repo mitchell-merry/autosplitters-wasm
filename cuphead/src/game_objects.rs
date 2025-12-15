@@ -1,7 +1,8 @@
 use asr::string::ArrayCString;
-use asr::{Address, PointerSize, Process};
+use asr::{Address, Address32, PointerSize, Process};
 use helpers::error::SimpleError;
-use helpers::pointer::{PointerPath, PointerPathReadable, ValueReader};
+use helpers::watchers::pointer_path::{PointerPath, PointerPathReadable};
+use helpers::watchers::{ValueGetter, Watcher};
 use std::cell::Cell;
 use std::error::Error;
 
@@ -25,14 +26,14 @@ impl<'a> SceneManager<'a> {
     pub fn active_scene(&self) -> Result<Scene<'a>, Box<dyn Error>> {
         Ok(Scene {
             process: self.process,
-            path: PointerPath::new32(self.process, self.address, [0x0, 0x24]),
+            path: PointerPath::new(self.process, self.address, PointerSize::Bit32, [0x0, 0x24]),
         })
     }
 }
 
 pub struct Scene<'a> {
     process: &'a Process,
-    pub path: PointerPath<'a, Process, u32>,
+    pub path: PointerPath<'a, Process>,
 }
 
 impl<'a> Scene<'a> {
@@ -65,12 +66,12 @@ impl<'a> Scene<'a> {
         &self,
         root_object_name: &str,
     ) -> Result<GameObject<'a>, Box<dyn Error>> {
-        let mut root_object_node = self.path.child::<u32>([0x0, 0x90]);
+        let mut root_object_node = self.path.child([0x0, 0x90]);
         loop {
-            let current_object_node = root_object_node.child::<u32>([0x0, 0x8]);
+            let current_object_node = root_object_node.child([0x0, 0x8]);
             let object = GameObject {
                 process: self.process,
-                address: current_object_node.read()?.into(),
+                address: current_object_node.read::<Address32>()?.into(),
             };
 
             let name = object.name()?;
@@ -104,9 +105,13 @@ pub struct GameObject<'a> {
 
 impl<'a> GameObject<'a> {
     pub fn name(&self) -> Result<String, Box<dyn Error>> {
-        let name: PointerPath<_, ArrayCString<128>> =
-            PointerPath::new32(self.process, self.address, [0x1C, 0x3C, 0x0]);
-        let name = name.read()?;
+        let name = PointerPath::new(
+            self.process,
+            self.address,
+            PointerSize::Bit32,
+            [0x1C, 0x3C, 0x0],
+        );
+        let name: ArrayCString<128> = name.read()?;
         name.validate_utf8()
             .map(|c| c.to_owned())
             .map_err(|_| SimpleError::from("failed reading game object name").into())
@@ -181,8 +186,8 @@ impl<'a> GameObjectActivePath<'a> {
     }
 }
 
-impl<'a> ValueReader<'a, bool> for GameObjectActivePath<'a> {
-    fn read(&self) -> Result<bool, Box<dyn Error>> {
+impl<'a> ValueGetter<bool> for GameObjectActivePath<'a> {
+    fn get(&self) -> Result<bool, Box<dyn Error>> {
         let active_scene = self.scene_manager.active_scene()?;
         let active_scene_name = active_scene.name()?;
         if self.scene != active_scene_name {
@@ -202,5 +207,11 @@ impl<'a> ValueReader<'a, bool> for GameObjectActivePath<'a> {
         self.cached_object.set(Some(game_object));
 
         Ok(active)
+    }
+}
+
+impl<'a> From<GameObjectActivePath<'a>> for Watcher<'a, bool> {
+    fn from(value: GameObjectActivePath<'a>) -> Self {
+        Watcher::new(Box::new(value))
     }
 }

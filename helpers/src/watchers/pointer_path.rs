@@ -78,6 +78,21 @@ impl<'a, TReadable: PointerPathReadable> PointerPath<'a, TReadable> {
         }
     }
 
+    /// Reads the value pointed to by the pointer path.
+    ///
+    /// The actual work for dereferencing and doing the reading is handled by the `readable`.
+    pub fn read<T: CheckedBitPattern>(&self) -> Result<T, Box<dyn Error>> {
+        let valid_path = if !self.path.is_empty() {
+            &self.path
+        } else {
+            &vec![0x0]
+        };
+
+        self.readable
+            .read_pointer_path(self.base_address, self.pointer_size, valid_path)
+            .map_err(|e| SimpleError::wrap(format!("failed to read pointer path {self}"), e).into())
+    }
+
     /// Create a new pointer path, by attaching to the end of this pointer path.
     ///
     /// For example, if you have an instance of an object at base, offset1, offset2, you may wish to
@@ -118,15 +133,7 @@ impl<'a, TReadable: PointerPathReadable, T: CheckedBitPattern> ValueGetter<T>
     for PointerPath<'a, TReadable>
 {
     fn get(&self) -> Result<T, Box<dyn Error>> {
-        let valid_path = if !self.path.is_empty() {
-            &self.path
-        } else {
-            &vec![0x0]
-        };
-
-        self.readable
-            .read_pointer_path(self.base_address, self.pointer_size, valid_path)
-            .map_err(|e| SimpleError::wrap(format!("failed to read pointer path {self}"), e).into())
+        self.read::<T>()
     }
 }
 
