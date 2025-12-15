@@ -1,12 +1,13 @@
 use asr::Process;
-use helpers::pointer::{Invalidatable, MemoryWatcher, PointerPath};
+use helpers::watchers::pointer_path::PointerPath;
+use helpers::watchers::Watcher;
 use idtech::IdTech;
 use std::error::Error;
 
 pub struct IdVec3<'a> {
-    pub x: MemoryWatcher<'a, PointerPath<'a, Process>, f32>,
-    pub y: MemoryWatcher<'a, PointerPath<'a, Process>, f32>,
-    pub z: MemoryWatcher<'a, PointerPath<'a, Process>, f32>,
+    pub x: Watcher<'a, f32>,
+    pub y: Watcher<'a, f32>,
+    pub z: Watcher<'a, f32>,
 }
 
 impl<'a> IdVec3<'a> {
@@ -21,10 +22,8 @@ impl<'a> IdVec3<'a> {
             z: path.child([c.get_offset("z")?]).into(),
         })
     }
-}
 
-impl<'a> Invalidatable for IdVec3<'a> {
-    fn invalidate(&mut self) {
+    pub fn invalidate(&mut self) {
         self.x.invalidate();
         self.y.invalidate();
         self.z.invalidate();

@@ -1,8 +1,10 @@
 use crate::{GameFlags, GameMode};
 use asr::emulator::gba::Emulator;
+use asr::PointerSize;
 use bitflags::bitflags;
 use bytemuck::{CheckedBitPattern, Pod, Zeroable};
-use helpers::pointer::{Invalidatable, MemoryWatcher, PointerPath};
+use helpers::watchers::pointer_path::PointerPath;
+use helpers::watchers::Watcher;
 
 bitflags! {
     // this is available at 3000dec
@@ -54,43 +56,45 @@ pub enum GameState {
 }
 
 pub struct Watchers<'a> {
-    pub world: MemoryWatcher<'a, PointerPath<'a, Emulator>, u8>,
-    pub sub_level: MemoryWatcher<'a, PointerPath<'a, Emulator>, u8>,
-    pub game_mode: MemoryWatcher<'a, PointerPath<'a, Emulator>, GameMode>,
-    pub time: MemoryWatcher<'a, PointerPath<'a, Emulator>, u32>,
-    pub flags: MemoryWatcher<'a, PointerPath<'a, Emulator>, GameFlags>,
-    pub input_flags: MemoryWatcher<'a, PointerPath<'a, Emulator>, InputFlags>,
-    pub state: MemoryWatcher<'a, PointerPath<'a, Emulator>, GameState>,
-    pub substate: MemoryWatcher<'a, PointerPath<'a, Emulator>, u8>,
+    pub world: Watcher<'a, u8>,
+    pub sub_level: Watcher<'a, u8>,
+    pub game_mode: Watcher<'a, GameMode>,
+    pub time: Watcher<'a, u32>,
+    pub flags: Watcher<'a, GameFlags>,
+    pub input_flags: Watcher<'a, InputFlags>,
+    pub state: Watcher<'a, GameState>,
+    pub substate: Watcher<'a, u8>,
 }
 
 impl<'a> Watchers<'a> {
     pub fn init(emulator: &'a Emulator) -> Self {
-        let base = PointerPath::new32(emulator, 0x3004420_u64, []);
+        let base = PointerPath::new(emulator, 0x3004420_u64, PointerSize::Bit32, []);
         // some more things:
         // 0x4 - save file slot
 
         // probably some instance of "level"?
         let some_important_thing = base.child([0x18, 0x0]);
 
-        let world: MemoryWatcher<_, _> = base.child([0x0]).named("world").into();
-        let sub_level: MemoryWatcher<_, _> = base.child([0x1]).named("sub level").into();
-        let game_mode: MemoryWatcher<_, _> = base.child([0x16]).named("game mode").into();
+        let world: Watcher<_> = base.child([0x0]).named("world").into();
+        let sub_level: Watcher<_> = base.child([0x1]).named("sub level").into();
+        let game_mode: Watcher<_> = base.child([0x16]).named("game mode").into();
 
         // 0x30059c0 + 0x24,0x26,0x34,0x28
 
-        let time: MemoryWatcher<_, _> = some_important_thing.child([0xB8]).named("time").into();
-        let flags: MemoryWatcher<_, _> = some_important_thing.child([0xBC]).named("flags").into();
+        let time: Watcher<_> = some_important_thing.child([0xB8]).named("time").into();
+        let flags: Watcher<_> = some_important_thing.child([0xBC]).named("flags").into();
 
-        let state: MemoryWatcher<_, _> = PointerPath::new32(emulator, 0x3000dca_u64, [])
+        let state: Watcher<_> = PointerPath::new(emulator, 0x3000dca_u64, PointerSize::Bit32, [])
             .named("state")
             .into();
-        let substate: MemoryWatcher<_, _> = PointerPath::new32(emulator, 0x3000dcb_u64, [])
-            .named("substate")
-            .into();
-        let input_flags: MemoryWatcher<_, _> = PointerPath::new32(emulator, 0x3000dec_u64, [])
-            .named("buttons")
-            .into();
+        let substate: Watcher<_> =
+            PointerPath::new(emulator, 0x3000dcb_u64, PointerSize::Bit32, [])
+                .named("substate")
+                .into();
+        let input_flags: Watcher<_> =
+            PointerPath::new(emulator, 0x3000dec_u64, PointerSize::Bit32, [])
+                .named("buttons")
+                .into();
 
         Watchers {
             world: world.default(),

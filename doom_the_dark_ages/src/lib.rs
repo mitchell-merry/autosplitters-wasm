@@ -1,13 +1,13 @@
 extern crate helpers;
+use crate::player::IdPlayer;
 use asr::signature::Signature;
-use asr::{future::next_tick, Process};
+use asr::{future::next_tick, PointerSize, Process};
 use bytemuck::CheckedBitPattern;
 use helpers::memory::scan_rel;
-use helpers::pointer::{Invalidatable, MemoryWatcher, PointerPath};
-use std::error::Error;
-
-use crate::player::IdPlayer;
+use helpers::watchers::pointer_path::PointerPath;
+use helpers::watchers::Watcher;
 use idtech::{IdTech, IdTechVersion};
+use std::error::Error;
 
 mod physics;
 mod player;
@@ -73,7 +73,7 @@ async fn on_attach(process: &Process) -> Result<(), Box<dyn Error>> {
 }
 
 struct Memory<'a> {
-    state: MemoryWatcher<'a, PointerPath<'a, Process>, IdGameSystemLocalState>,
+    state: Watcher<'a, IdGameSystemLocalState>,
     player: IdPlayer<'a>,
 }
 
@@ -98,6 +98,7 @@ impl<'a> Memory<'a> {
             state: PointerPath::new(
                 process,
                 game_system_local,
+                PointerSize::Bit64,
                 [idtech.get_offset("Game", "idGameSystemLocal", "state")?],
             )
             .into(),
@@ -106,6 +107,7 @@ impl<'a> Memory<'a> {
                 PointerPath::new(
                     process,
                     game_system_local,
+                    PointerSize::Bit64,
                     [
                         idtech.get_offset("Game", "idGameSystemLocal", "mapInstance")?,
                         0x1988,

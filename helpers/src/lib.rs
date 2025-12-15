@@ -5,6 +5,7 @@ pub mod memory;
 pub mod pointer;
 pub mod settings;
 pub mod try_load;
+pub mod watchers;
 
 use crate::error::SimpleError;
 use asr::{print_message, timer};

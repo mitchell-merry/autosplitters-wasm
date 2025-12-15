@@ -16,7 +16,7 @@ use asr::timer::{
 };
 use asr::{future::next_tick, print_message, Process};
 use helpers::error::SimpleError;
-use helpers::pointer::{Invalidatable, Readable2, UnityImage};
+use helpers::watchers::unity::UnityImage;
 use std::error::Error;
 
 asr::async_main!(stable);
