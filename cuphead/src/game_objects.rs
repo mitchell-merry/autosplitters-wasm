@@ -17,6 +17,8 @@ impl<'a> SceneManager<'a> {
             .get_module_address("Cuphead.exe")
             .map_err(|_| SimpleError::from("failed getting main module address"))?;
 
+        // 1.0,1.1.5,1.2.4 windows: 55 8B EC E8 ?? ?? ?? ?? 8B C8 E8 ?? ?? ?? ?? 85 C0, 0x4
+
         // aga
         let address = module_address + 0x104FB78;
 
