@@ -1,3 +1,4 @@
+use asr::signature::Signature;
 use asr::string::ArrayCString;
 use asr::{Address, Address32, PointerSize, Process};
 use helpers::error::SimpleError;
@@ -13,11 +14,22 @@ pub struct SceneManager<'a> {
 
 impl<'a> SceneManager<'a> {
     pub fn attach(process: &'a Process) -> Result<Self, Box<dyn Error>> {
+        // 1.0,1.1.5,1.2.4 windows: 55 8B EC E8 ?? ?? ?? ?? 8B C8 E8 ?? ?? ?? ?? 85 C0, 0x4
+        const SIG: Signature<17> =
+            Signature::new("55 8B EC E8 ?? ?? ?? ?? 8B C8 E8 ?? ?? ?? ?? 85 C0");
+
+        // let addr = scan_rel(&SIG, process, "Cuphead.exe", 0x4, 0x4)?;
+        //
+        // let real_addr = addr
+        //     + process
+        //         .read::<i32>(addr + 0x2)
+        //         .map_err(|_| SimpleError::from("can't read"))?
+        //     + 0x4;
+
+        // aga
         let module_address = process
             .get_module_address("Cuphead.exe")
             .map_err(|_| SimpleError::from("failed getting main module address"))?;
-
-        // aga
         let address = module_address + 0x104FB78;
 
         Ok(Self { process, address })

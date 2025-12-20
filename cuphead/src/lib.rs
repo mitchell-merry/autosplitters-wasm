@@ -10,7 +10,7 @@ use crate::memory::Memory;
 use crate::settings::Settings;
 use crate::util::format_seconds;
 use asr::future::retry;
-use asr::game_engine::unity::mono::{Image, Module};
+use asr::game_engine::unity::mono::{Image, Module, Version};
 use asr::settings::Gui;
 use asr::timer::{
     pause_game_time, reset, resume_game_time, set_game_time, set_variable, split, start, state,
@@ -54,6 +54,8 @@ async fn main() {
     loop {
         let process = retry(|| PROCESS_NAMES.iter().find_map(|name| Process::attach(name))).await;
 
+        print_message(&format!("aga {:?}", process.get_name()));
+
         process
             .until_closes(async {
                 let res = on_attach(&process, &mut settings).await;
@@ -71,11 +73,12 @@ async fn on_attach(process: &Process, settings: &mut Settings) -> Result<(), Box
     let (module, image) = helpers::try_load::wait_try_load_millis::<(Module, Image), _, _>(
         async || {
             print_message("  => loading module");
-            let module = Module::attach_auto_detect(process)
+            let module = Module::attach(process, Version::V1Cattrs)
                 .ok_or(SimpleError::from("mono module not found"))?;
             print_message(&format!(
                 "  => module loaded (detected {:?}, {:?}), loading image",
-                module.version, module.pointer_size
+                module.get_version(),
+                module.get_pointer_size()
             ));
             let image = module
                 .get_default_image(process)
@@ -86,6 +89,13 @@ async fn on_attach(process: &Process, settings: &mut Settings) -> Result<(), Box
         std::time::Duration::from_millis(500),
     )
     .await;
+
+    // let sm = SceneManager::attach(process)?;
+    // sm.
+    //
+    // loop {
+    //     next_tick().await;
+    // }
 
     // let scene_manager = SceneManager::attach(process);
     // if let Some(scene_manager) = scene_manager {

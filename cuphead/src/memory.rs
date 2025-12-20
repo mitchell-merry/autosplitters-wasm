@@ -44,7 +44,7 @@ pub struct Memory<'a> {
 
 impl<'a> Memory<'a> {
     pub fn new(unity: UnityImage<'a>, sm: &'a SceneManager) -> Result<Memory<'a>, Box<dyn Error>> {
-        let offsets = Offsets::new(unity.module.pointer_size);
+        let offsets = Offsets::new(unity.module.get_pointer_size());
         Ok(Memory {
             done_loading: Watcher::from(unity.path(
                 "SceneLoader",

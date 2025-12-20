@@ -19,5 +19,5 @@ rustflags = ["-Aclippy::field_is_never_read"]
 
 [workspace.dependencies]
 #asr = { git = "https://github.com/AlexKnauth/asr", branch = "mono-4" }
-asr = { git = "https://github.com/mitchell-merry/asr", branch = "mitchell-merry/version-detect-fixes" }
-#asr = { path = "../asr" }
+#asr = { git = "https://github.com/mitchell-merry/asr", branch = "mitchell-merry/version-detect-fixes" }
+asr = { path = "../asr" }
