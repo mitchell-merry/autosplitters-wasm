@@ -28,9 +28,9 @@ impl<'a> SceneManager<'a> {
 
         // aga
         let module_address = process
-            .get_module_address("Cuphead.exe")
+            .get_main_module_range()
             .map_err(|_| SimpleError::from("failed getting main module address"))?;
-        let address = module_address + 0x104FB78;
+        let address = module_address.0 + 0x104FB78;
 
         Ok(Self { process, address })
     }

@@ -55,6 +55,7 @@ async fn main() {
         let process = retry(|| PROCESS_NAMES.iter().find_map(|name| Process::attach(name))).await;
 
         print_message(&format!("aga {:?}", process.get_name()));
+        print_message(&format!("aga {:?}", process.get_pointer_size()));
 
         process
             .until_closes(async {
