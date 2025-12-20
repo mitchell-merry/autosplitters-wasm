@@ -1,7 +1,8 @@
 use asr::signature::Signature;
 use asr::string::ArrayCString;
-use asr::{Address, Address32, PointerSize, Process};
+use asr::{print_message, Address, Address32, PointerSize, Process};
 use helpers::error::SimpleError;
+use helpers::memory::scan_rel;
 use helpers::watchers::pointer_path::{PointerPath, PointerPathReadable};
 use helpers::watchers::{ValueGetter, Watcher};
 use std::cell::Cell;
@@ -18,21 +19,25 @@ impl<'a> SceneManager<'a> {
         const SIG: Signature<17> =
             Signature::new("55 8B EC E8 ?? ?? ?? ?? 8B C8 E8 ?? ?? ?? ?? 85 C0");
 
-        // let addr = scan_rel(&SIG, process, "Cuphead.exe", 0x4, 0x4)?;
-        //
-        // let real_addr = addr
-        //     + process
-        //         .read::<i32>(addr + 0x2)
-        //         .map_err(|_| SimpleError::from("can't read"))?
-        //     + 0x4;
+        let addr = scan_rel(&SIG, process, "Cuphead.exe", 0x4, 0x4)?;
+
+        print_message(&format!("attach {:?}", addr));
+        let real_addr = addr
+            + process
+                .read::<i32>(addr + 0x2)
+                .map_err(|_| SimpleError::from("can't read"))?
+            + 0x4;
 
         // aga
-        let module_address = process
-            .get_main_module_range()
-            .map_err(|_| SimpleError::from("failed getting main module address"))?;
-        let address = module_address.0 + 0x104FB78;
+        // let module_address = process
+        //     .get_main_module_range()
+        //     .map_err(|_| SimpleError::from("failed getting main module address"))?;
+        // let address = module_address.0 + 0x104FB78;
 
-        Ok(Self { process, address })
+        Ok(Self {
+            process,
+            address: real_addr,
+        })
     }
 
     pub fn active_scene(&self) -> Result<Scene<'a>, Box<dyn Error>> {
