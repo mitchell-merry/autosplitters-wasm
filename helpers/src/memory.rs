@@ -39,7 +39,7 @@ pub fn scan_rel(
 
     Ok(addr
         + process
-            .read::<u32>(addr)
+            .read::<i32>(addr)
             .map_err(|_| SimpleError::from(&format!("unable to read from address 0x{}", addr)))?
         + next_instruction)
 }
