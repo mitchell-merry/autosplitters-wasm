@@ -1,5 +1,6 @@
 use crate::error::SimpleError;
 use crate::watchers::pointer_path::PointerPathReadable;
+#[cfg(feature = "gba")]
 use asr::emulator::gba::Emulator;
 use asr::{Address, PointerSize};
 use bytemuck::CheckedBitPattern;
