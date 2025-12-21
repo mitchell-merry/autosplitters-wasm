@@ -1,6 +1,6 @@
 use crate::error::SimpleError;
 use asr::signature::Signature;
-use asr::{Address, Process};
+use asr::{print_message, Address, Process};
 use std::error::Error;
 
 pub trait Scannable {
@@ -32,8 +32,10 @@ pub fn scan_rel(
     let module_range = process
         .get_module_range(module)
         .map_err(|_| SimpleError::from(&format!("failed to get range of module {}", module)))?;
+    print_message(&format!("module range {:?}", module_range));
 
     let addr = signature.scan_range(process, module_range)? + offset;
+    print_message(&format!("scan_range {:?}", addr));
 
     Ok(addr
         + process

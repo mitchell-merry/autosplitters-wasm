@@ -19,9 +19,14 @@ impl<'a> SceneManager<'a> {
         const SIG: Signature<17> =
             Signature::new("55 8B EC E8 ?? ?? ?? ?? 8B C8 E8 ?? ?? ?? ?? 85 C0");
 
-        let addr = scan_rel(&SIG, process, "Cuphead.exe", 0x4, 0x4)?;
+        let main_module = process
+            .get_name()
+            .map_err(|_| SimpleError::from("cant get process name"))?;
+        print_message(&format!("module name {:?}", main_module));
 
-        print_message(&format!("attach {:?}", addr));
+        let addr = scan_rel(&SIG, process, &main_module, 0x4, 0x4)?;
+        print_message(&format!("scan_rel {:?}", addr));
+
         let real_addr = addr
             + process
                 .read::<i32>(addr + 0x2)
