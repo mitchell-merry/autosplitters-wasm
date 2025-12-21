@@ -16,6 +16,7 @@ pub struct SceneManager<'a> {
 impl<'a> SceneManager<'a> {
     pub fn attach(process: &'a Process) -> Result<Self, Box<dyn Error>> {
         // 1.0,1.1.5,1.2.4 windows: 55 8B EC E8 ?? ?? ?? ?? 8B C8 E8 ?? ?? ?? ?? 85 C0, 0x4
+        // GetActiveScene internally calls GetSceneManager, we this sig is for GetActiveScene
         const SIG: Signature<17> =
             Signature::new("55 8B EC E8 ?? ?? ?? ?? 8B C8 E8 ?? ?? ?? ?? 85 C0");
 
@@ -27,25 +28,13 @@ impl<'a> SceneManager<'a> {
         let addr = scan_rel(&SIG, process, &main_module, 0x4, 0x4)?;
         print_message(&format!("scan_rel {:?}", addr));
 
-        let rip = process
-            .read::<i32>(addr + 0x1)
-            .map_err(|_| SimpleError::from("can't read"))?;
+        // mov [address]
+        let address: Address = process
+            .read::<u32>(addr + 0x1)
+            .map_err(|_| SimpleError::from("can't read"))?
+            .into();
 
-        print_message(&format!("rip {:?}", rip));
-        let real_addr = addr + rip + 0x4;
-        print_message(&format!("real_addr {:?}", real_addr));
-
-        // aga
-        let module_address = process
-            .get_main_module_range()
-            .map_err(|_| SimpleError::from("failed getting main module address"))?;
-        let address = module_address.0 + 0x104FB78;
-        print_message(&format!("should be {:?}", address));
-
-        Ok(Self {
-            process,
-            address: real_addr,
-        })
+        Ok(Self { process, address })
     }
 
     pub fn active_scene(&self) -> Result<Scene<'a>, Box<dyn Error>> {
