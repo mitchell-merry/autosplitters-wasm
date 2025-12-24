@@ -113,9 +113,12 @@ async fn on_attach(process: &Process, settings: &mut Settings) -> Result<(), Box
     //     print_message("can't");
     // }
 
+    print_message(&format!("a"));
     let unity = UnityImage::new(process, &module, &image);
+    print_message(&format!("b"));
     let sm = SceneManager::attach(process)
         .ok_or(SimpleError::from("failed to attach to asr scene manager"))?;
+    print_message(&format!("C"));
 
     let mut memory = Memory::new(unity, &sm)?;
     let mut measured_state = MeasuredState::default();
