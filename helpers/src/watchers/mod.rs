@@ -14,6 +14,12 @@ pub trait ValueGetter<T> {
     fn get(&self) -> Result<T, Box<dyn Error>>;
 }
 
+impl<T: Copy> ValueGetter<T> for T {
+    fn get(&self) -> Result<T, Box<dyn Error>> {
+        Ok(*self)
+    }
+}
+
 /// A Watcher is used for fetching values, and comparing those values against old versions of that
 /// value.
 ///
@@ -97,6 +103,15 @@ impl<'a, T: Copy> Watcher<'a, T> {
             old: self.old,
             default: Some(default),
         }
+    }
+}
+
+impl<T: Copy + 'static> Watcher<'_, T> {
+    /// Creates a watcher that will always return the same value.
+    ///
+    /// Usually used as a placeholder.
+    pub fn constant(constant: T) -> Self {
+        Self::new(Box::new(constant))
     }
 }
 

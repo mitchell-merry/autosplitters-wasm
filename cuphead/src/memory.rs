@@ -1,7 +1,8 @@
 use crate::enums::Levels;
-use crate::game_objects::{GameObjectActivePath, SceneManager};
+use crate::game_objects::GameObjectActivePath;
+use asr::game_engine::unity::scene_manager::SceneManager;
 use asr::string::ArrayWString;
-use asr::PointerSize;
+use asr::{Address64, PointerSize};
 use helpers::watchers::unity::UnityImage;
 use helpers::watchers::Watcher;
 use std::error::Error;
@@ -28,7 +29,7 @@ impl Offsets {
 
 pub struct Memory<'a> {
     pub done_loading: Watcher<'a, bool>,
-    pub insta: Watcher<'a, u32>,
+    pub insta: Watcher<'a, Address64>,
     pub scene: Watcher<'a, ArrayWString<128>>,
     pub in_game: Watcher<'a, bool>,
     pub level: Watcher<'a, Levels>,
@@ -52,8 +53,7 @@ impl<'a> Memory<'a> {
                 &["_instance", "doneLoadingSceneAsync"],
             ))
             .default_given(true),
-            insta: Watcher::from(unity.path("SceneLoader", 0, &["_instance", "camera"]))
-                .default_given(0x0),
+            insta: Watcher::from(unity.path("SceneLoader", 0, &["_instance", "camera"])).default(),
             scene: Watcher::from(unity.path(
                 "SceneLoader",
                 0,

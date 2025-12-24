@@ -5,12 +5,12 @@ mod memory;
 mod settings;
 mod util;
 
-use crate::game_objects::SceneManager;
 use crate::memory::Memory;
 use crate::settings::Settings;
 use crate::util::format_seconds;
 use asr::future::retry;
 use asr::game_engine::unity::mono::{Image, Module, Version};
+use asr::game_engine::unity::scene_manager::SceneManager;
 use asr::settings::Gui;
 use asr::timer::{
     pause_game_time, reset, resume_game_time, set_game_time, set_variable, split, start, state,
@@ -54,8 +54,8 @@ async fn main() {
     loop {
         let process = retry(|| PROCESS_NAMES.iter().find_map(|name| Process::attach(name))).await;
 
-        print_message(&format!("aga {:?}", process.get_name()));
-        print_message(&format!("aga {:?}", process.get_pointer_size()));
+        // print_message(&format!("aga {:?}", process.get_name()));
+        // print_message(&format!("aga {:?}", process.get_pointer_size()));
 
         process
             .until_closes(async {
@@ -114,11 +114,9 @@ async fn on_attach(process: &Process, settings: &mut Settings) -> Result<(), Box
     // }
 
     let unity = UnityImage::new(process, &module, &image);
-    let sm = SceneManager::attach(process)?;
-    // let go = sm.get_game_object_path(
-    // )?;
-    // print_message(&format!("{:?}", go.name()));
-    // print_message(&format!("active: {:?}", go.is_active_self()));
+    let sm = SceneManager::attach(process)
+        .ok_or(SimpleError::from("failed to attach to asr scene manager"))?;
+
     let mut memory = Memory::new(unity, &sm)?;
     let mut measured_state = MeasuredState::default();
 
@@ -159,7 +157,7 @@ async fn tick<'a>(
         "done loading scene async",
         &format!("{}", memory.done_loading.current()?),
     );
-    set_variable("insta", &format!("{:X}", memory.insta.current()?));
+    set_variable("insta", &format!("{}", memory.insta.current()?));
     let scene = String::from_utf16(memory.scene.current()?.as_slice())?;
     set_variable("scene name", &format!("{}", scene));
     let previous_scene = match memory.scene.old() {
