@@ -1,5 +1,5 @@
 use crate::enums::Levels;
-use crate::game_objects::GameObjectActivePath;
+use crate::game_objects::{GameObjectActivePath, MonoBehaviourFieldPath};
 use asr::game_engine::unity::scene_manager::SceneManager;
 use asr::string::ArrayWString;
 use asr::{Address64, PointerSize};
@@ -41,6 +41,8 @@ pub struct Memory<'a> {
     pub level_is_dice: Watcher<'a, bool>,
     pub level_is_dice_main: Watcher<'a, bool>,
     pub devil_bad_ending_active: Watcher<'a, bool>,
+    pub difficulty_ticker_started_counting: Watcher<'a, bool>,
+    pub difficulty_ticker_finished_counting: Watcher<'a, bool>,
 }
 
 impl<'a> Memory<'a> {
@@ -110,6 +112,28 @@ impl<'a> Memory<'a> {
                 &["devil_cinematic_bad_ending_transition_0001"],
             ))
             .default(),
+            difficulty_ticker_started_counting: Watcher::from(MonoBehaviourFieldPath::init(
+                unity.process,
+                unity.module,
+                sm,
+                "scene_win",
+                "WinScreen",
+                &["UI", "Canvas", "Scoring", "DifficultyTicker"],
+                "WinScreenTicker",
+                &["startedCounting"],
+            )?)
+            .default(),
+            difficulty_ticker_finished_counting: Watcher::from(MonoBehaviourFieldPath::init(
+                unity.process,
+                unity.module,
+                sm,
+                "scene_win",
+                "WinScreen",
+                &["UI", "Canvas", "Scoring", "DifficultyTicker"],
+                "WinScreenTicker",
+                &["<FinishedCounting>k__BackingField"],
+            )?)
+            .default(),
         })
     }
 
@@ -127,6 +151,8 @@ impl<'a> Memory<'a> {
         self.level_is_dice.invalidate();
         self.level_is_dice_main.invalidate();
         self.devil_bad_ending_active.invalidate();
+        self.difficulty_ticker_started_counting.invalidate();
+        self.difficulty_ticker_finished_counting.invalidate();
     }
 
     pub fn is_loading(&self) -> Result<bool, Box<dyn Error>> {
