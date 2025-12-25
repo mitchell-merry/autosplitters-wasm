@@ -110,7 +110,8 @@ impl<'a> Memory<'a> {
                 "scene_cutscene_devil",
                 "Cutscene",
                 &["devil_cinematic_bad_ending_transition_0001"],
-            )),
+            ))
+            .default(),
             difficulty_ticker_started_counting: Watcher::from(MonoBehaviourFieldPath::init(
                 unity.process,
                 unity.module,
@@ -120,7 +121,8 @@ impl<'a> Memory<'a> {
                 &["UI", "Canvas", "Scoring", "DifficultyTicker"],
                 "WinScreenTicker",
                 &["startedCounting"],
-            )?),
+            )?)
+            .default(),
             difficulty_ticker_finished_counting: Watcher::from(MonoBehaviourFieldPath::init(
                 unity.process,
                 unity.module,
@@ -130,7 +132,8 @@ impl<'a> Memory<'a> {
                 &["UI", "Canvas", "Scoring", "DifficultyTicker"],
                 "WinScreenTicker",
                 &["<FinishedCounting>k__BackingField"],
-            )?),
+            )?)
+            .default(),
         })
     }
 
