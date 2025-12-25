@@ -163,8 +163,9 @@ async fn tick<'a>(
 
     set_variable(
         "done loading scene async",
-        &format!("{}", memory.done_loading.current()?),
+        &format!("{:?}", memory.done_loading.current()),
     );
+    print_message(&format!("ok are we serious"));
     set_variable("insta", &format!("{}", memory.insta.current()?));
     let scene = String::from_utf16(memory.scene.current()?.as_slice())?;
     set_variable("scene name", &format!("{}", scene));
