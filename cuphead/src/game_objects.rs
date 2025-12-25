@@ -20,7 +20,7 @@ fn get_scene_if_active(
 
     let active_scene_name = active_scene
         .name(process, scene_manager)
-        .map_err(|_| SimpleError::from("failed reading game object"))?;
+        .map_err(|_| SimpleError::from("failed getting active scene name"))?;
 
     if scene != active_scene_name {
         return Err(SimpleError::from(&format!("unable to get game object path, in scene {active_scene_name} while expected scene was {}", scene)).into());
