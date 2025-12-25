@@ -2,7 +2,6 @@ extern crate core;
 extern crate proc_macro;
 pub mod error;
 pub mod memory;
-pub mod pointer;
 pub mod settings;
 pub mod try_load;
 pub mod watchers;
