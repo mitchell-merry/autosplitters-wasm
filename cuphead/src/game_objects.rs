@@ -172,10 +172,7 @@ impl<'a, T: CheckedBitPattern> MonoBehaviourFieldPath<'a, T> {
 impl<'a, T: CheckedBitPattern> ValueGetter<T> for MonoBehaviourFieldPath<'a, T> {
     fn get(&self) -> Result<T, Box<dyn Error>> {
         let active_scene = get_scene_if_active(self.process, self.scene_manager, self.scene)
-            .map_err(|e| {
-                self.cached_component.set(None);
-                e
-            })?;
+            .inspect_err(|_| self.cached_component.set(None))?;
 
         // this is pretty jank, but we're using the cached address if one exists
         let mut current_object = match self.cached_component.take() {
@@ -200,7 +197,6 @@ impl<'a, T: CheckedBitPattern> ValueGetter<T> for MonoBehaviourFieldPath<'a, T> 
 
         // starts as the component
         self.cached_component.set(Some(current_object));
-        // print_message(&format!("component found at {current_object}"));
         let component = current_object;
 
         let mut inner = self.inner.borrow_mut();
