@@ -54,9 +54,6 @@ async fn main() {
     loop {
         let process = retry(|| PROCESS_NAMES.iter().find_map(|name| Process::attach(name))).await;
 
-        // print_message(&format!("aga {:?}", process.get_name()));
-        // print_message(&format!("aga {:?}", process.get_pointer_size()));
-
         process
             .until_closes(async {
                 let res = on_attach(&process, &mut settings).await;
@@ -91,36 +88,12 @@ async fn on_attach(process: &Process, settings: &mut Settings) -> Result<(), Box
     )
     .await;
 
-    // let sm = SceneManager::attach(process)?;
-    // sm.
-    //
-    // loop {
-    //     next_tick().await;
-    // }
-
-    // let scene_manager = SceneManager::attach(process);
-    // if let Some(scene_manager) = scene_manager {
-    //     print_message(&format!(
-    //         "current: {:?}",
-    //         scene_manager
-    //             .get_current_scene(process)
-    //             .unwrap()
-    //             .path::<128>(process, &scene_manager)
-    //             .unwrap()
-    //             .validate_utf8()
-    //     ));
-    // } else {
-    //     print_message("can't");
-    // }
-
     let unity = UnityImage::new(process, &module, &image);
     let sm = SceneManager::attach(process)
         .ok_or(SimpleError::from("failed to attach to asr scene manager"))?;
 
     let mut memory = Memory::new(unity, &sm)?;
     let mut measured_state = MeasuredState::default();
-
-    // print_message(&sm.active_scene()?.name()?);
 
     while process.is_open() {
         settings.update();
