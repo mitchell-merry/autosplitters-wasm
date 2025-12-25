@@ -113,27 +113,20 @@ async fn on_attach(process: &Process, settings: &mut Settings) -> Result<(), Box
     //     print_message("can't");
     // }
 
-    print_message(&format!("a"));
     let unity = UnityImage::new(process, &module, &image);
-    print_message(&format!("b"));
     let sm = SceneManager::attach(process)
         .ok_or(SimpleError::from("failed to attach to asr scene manager"))?;
-    print_message(&format!("C"));
 
     let mut memory = Memory::new(unity, &sm)?;
-    print_message(&format!("D"));
     let mut measured_state = MeasuredState::default();
-    print_message(&format!("E"));
 
     // print_message(&sm.active_scene()?.name()?);
 
     while process.is_open() {
-        print_message(&format!("F?"));
         settings.update();
 
         next_tick().await;
 
-        print_message(&format!("G?"));
         memory.invalidate();
 
         if let Err(err) = tick(process, &memory, &mut measured_state, settings).await {
@@ -159,13 +152,11 @@ async fn tick<'a>(
     settings: &mut Settings,
 ) -> Result<(), Box<dyn Error>> {
     // Intended for users:
-    print_message(&format!("H?"));
 
     set_variable(
         "done loading scene async",
         &format!("{:?}", memory.done_loading.current()),
     );
-    print_message(&format!("ok are we serious"));
     set_variable("insta", &format!("{}", memory.insta.current()?));
     let scene = String::from_utf16(memory.scene.current()?.as_slice())?;
     set_variable("scene name", &format!("{}", scene));
