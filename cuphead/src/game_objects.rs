@@ -71,14 +71,29 @@ impl<'a> ValueGetter<bool> for GameObjectActivePath<'a> {
         let game_object = match self.cached_object.take() {
             Some(game_object) => game_object,
             None => {
-                let transform = active_scene
-                    .find_transform(
-                        self.process,
-                        self.scene_manager,
-                        self.root_object_name,
-                        self.path,
-                    )
-                    .map_err(|_| SimpleError::from("couldnt find transform"))?;
+                // let transform = active_scene
+                //     .find_transform(
+                //         self.process,
+                //         self.scene_manager,
+                //         self.root_object_name,
+                //         self.path,
+                //     )
+                //     .map_err(|_| SimpleError::from("couldnt find transform"))?;
+
+                let mut transform = active_scene
+                    .get_root_game_object(self.process, self.scene_manager, self.root_object_name)
+                    .map_err(|_| SimpleError::from("failed to get root transform"))?;
+
+                for object_name in self.path {
+                    transform = transform
+                        .get_child(self.process, self.scene_manager, object_name)
+                        .map_err(|_| {
+                            SimpleError::from(&format!(
+                                "failed to get child transform {}",
+                                object_name
+                            ))
+                        })?;
+                }
 
                 transform
                     .get_game_object(self.process, self.scene_manager)
