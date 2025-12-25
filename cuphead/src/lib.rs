@@ -201,18 +201,15 @@ async fn tick<'a>(
     );
     set_variable(
         "devil bad ending active",
-        &format!("{:?}", memory.devil_bad_ending_active.current()?),
+        &format!("{:?}", memory.devil_bad_ending_active.current()),
     );
     set_variable(
         "difficulty ticker started counting",
-        &format!("{:?}", memory.difficulty_ticker_started_counting.current()?),
+        &format!("{:?}", memory.difficulty_ticker_started_counting.current()),
     );
     set_variable(
         "difficulty ticker finished counting",
-        &format!(
-            "{:?}",
-            memory.difficulty_ticker_finished_counting.current()?
-        ),
+        &format!("{:?}", memory.difficulty_ticker_finished_counting.current()),
     );
 
     if memory.lsd_time.changed()? && memory.lsd_time.current()? != 0f32 {
