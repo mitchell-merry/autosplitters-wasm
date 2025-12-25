@@ -1,5 +1,4 @@
 use asr::game_engine::unity::mono::{Class, Module};
-use asr::game_engine::unity::scene_manager;
 use asr::game_engine::unity::scene_manager::{CppGameObject, Scene, SceneManager};
 use asr::{Address, Process};
 use bytemuck::CheckedBitPattern;
@@ -31,7 +30,7 @@ fn get_scene_if_active(
 
 pub struct GameObjectActivePath<'a> {
     process: &'a Process,
-    scene_manager: &'a scene_manager::SceneManager,
+    scene_manager: &'a SceneManager,
 
     scene: &'static str,
     root_object_name: &'static str,
@@ -43,7 +42,7 @@ pub struct GameObjectActivePath<'a> {
 impl<'a> GameObjectActivePath<'a> {
     pub fn new(
         process: &'a Process,
-        scene_manager: &'a scene_manager::SceneManager,
+        scene_manager: &'a SceneManager,
         scene: &'static str,
         root_object_name: &'static str,
         path: &'static [&'static str],
@@ -71,29 +70,14 @@ impl<'a> ValueGetter<bool> for GameObjectActivePath<'a> {
         let game_object = match self.cached_object.take() {
             Some(game_object) => game_object,
             None => {
-                // let transform = active_scene
-                //     .find_transform(
-                //         self.process,
-                //         self.scene_manager,
-                //         self.root_object_name,
-                //         self.path,
-                //     )
-                //     .map_err(|_| SimpleError::from("couldnt find transform"))?;
-
-                let mut transform = active_scene
-                    .get_root_game_object(self.process, self.scene_manager, self.root_object_name)
-                    .map_err(|_| SimpleError::from("failed to get root transform"))?;
-
-                for object_name in self.path {
-                    transform = transform
-                        .get_child(self.process, self.scene_manager, object_name)
-                        .map_err(|_| {
-                            SimpleError::from(&format!(
-                                "failed to get child transform {}",
-                                object_name
-                            ))
-                        })?;
-                }
+                let transform = active_scene
+                    .find_transform(
+                        self.process,
+                        self.scene_manager,
+                        self.root_object_name,
+                        self.path,
+                    )
+                    .map_err(|_| SimpleError::from("couldnt find transform"))?;
 
                 transform
                     .get_game_object(self.process, self.scene_manager)
@@ -169,6 +153,7 @@ impl<'a, T: CheckedBitPattern> MonoBehaviourFieldPath<'a, T> {
     }
 }
 
+// FIXME: all of this is very jank
 impl<'a, T: CheckedBitPattern> ValueGetter<T> for MonoBehaviourFieldPath<'a, T> {
     fn get(&self) -> Result<T, Box<dyn Error>> {
         let active_scene = get_scene_if_active(self.process, self.scene_manager, self.scene)
