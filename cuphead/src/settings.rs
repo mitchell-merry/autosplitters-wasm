@@ -39,11 +39,13 @@ impl LevelCompleteSetting {
             LevelCompleteSetting::AfterScorecard => {
                 level == Levels::Devil
                     || level == Levels::Saltbaker
+                    || level == Levels::Graveyard
                     || level == Levels::Mausoleum
                     || level.get_type() == LevelType::ChessPiece
             }
             LevelCompleteSetting::AfterScorecardIncludingSaltbaker => {
                 level == Levels::Devil
+                    || level == Levels::Graveyard
                     || level == Levels::Mausoleum
                     || level.get_type() == LevelType::ChessPiece
             }
