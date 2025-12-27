@@ -9,13 +9,3 @@ helpers = { path = "../helpers" }
 zdoom = { path = "../zdoom" }
 
 [lib]
-crate-type = ["cdylib"]
-
-[profile.release]
-lto = true
-panic = "abort"
-codegen-units = 1
-strip = true
-
-[profile.release.build-override]
-opt-level = 0
