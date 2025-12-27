@@ -1,6 +1,5 @@
 extern crate helpers;
 mod enums;
-mod game_objects;
 mod memory;
 mod settings;
 mod util;
