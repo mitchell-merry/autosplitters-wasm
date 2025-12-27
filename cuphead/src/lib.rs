@@ -150,7 +150,7 @@ async fn tick<'a>(
     );
     set_variable("insta", &format!("{}", memory.insta.current()?));
     let scene = String::from_utf16(memory.scene.current()?.as_slice())?;
-    set_variable("scene name", &format!("{}", scene));
+    set_variable("scene name", &scene.to_string());
     let previous_scene = match memory.scene.old() {
         Some(previous_scene) => String::from_utf16(previous_scene.as_slice())?,
         None => String::new(),

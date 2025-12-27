@@ -175,6 +175,7 @@ pub struct MonoBehaviourFieldPath<'a, T: CheckedBitPattern> {
 }
 
 impl<'a, T: CheckedBitPattern> MonoBehaviourFieldPath<'a, T> {
+    #[allow(clippy::too_many_arguments)]
     pub fn init(
         process: &'a Process,
         module: Rc<Module>,

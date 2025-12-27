@@ -54,7 +54,7 @@ async fn on_attach(process: &Process) -> Result<(), Box<dyn Error>> {
     let mut tick_count = 0;
 
     while process.is_open() {
-        tick_count = tick_count + 1;
+        tick_count += 1;
 
         let x: bool = process
             .read(addr)

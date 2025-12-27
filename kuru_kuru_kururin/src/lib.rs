@@ -148,7 +148,7 @@ async fn on_attach(
         }
 
         if state() == TimerState::Running {
-            if get_setting("igt_mode", &settings_defaults)? {
+            if get_setting("igt_mode", settings_defaults)? {
                 set_game_time(get_in_game_time(watchers.time.current()?));
                 pause_game_time();
             } else {
