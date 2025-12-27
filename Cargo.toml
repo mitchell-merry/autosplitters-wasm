@@ -1,6 +1,7 @@
 [workspace]
 resolver = "2"
 members = [
+    "bread_and_fred",
     "cuphead",
     "dismantled",
     "doom_the_dark_ages",

@@ -59,6 +59,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "bread_and_fred"
+version = "0.1.0"
+dependencies = [
+ "asr",
+ "bytemuck",
+ "helpers",
+ "once_cell",
+]
+
+[[package]]
 name = "bytemuck"
 version = "1.24.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

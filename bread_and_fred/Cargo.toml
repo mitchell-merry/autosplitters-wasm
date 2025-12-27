@@ -1,0 +1,14 @@
+[package]
+name = "bread_and_fred"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+asr = { workspace = true, features = ["alloc", "derive", "unity"] }
+bytemuck = "1.23.1"
+helpers = { path = "../helpers", features = ["unity"] }
+once_cell = "1.19.0"
+
+[lib]
+crate-type = ["cdylib"]
+
