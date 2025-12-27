@@ -63,6 +63,7 @@ async fn main() {
                 }
             })
             .await;
+        next_tick().await;
     }
 }
 
