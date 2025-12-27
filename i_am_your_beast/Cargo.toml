@@ -10,3 +10,4 @@ helpers = { path = "../helpers", features = ["unity"] }
 once_cell = "1.19.0"
 
 [lib]
+crate-type = ["cdylib"]
