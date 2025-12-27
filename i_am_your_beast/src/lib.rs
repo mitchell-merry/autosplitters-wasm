@@ -12,6 +12,7 @@ use asr::{future::next_tick, print_message, Process};
 use helpers::error::SimpleError;
 use helpers::watchers::unity::UnityImage;
 use std::error::Error;
+use std::rc::Rc;
 
 asr::async_main!(stable);
 
@@ -70,7 +71,7 @@ async fn on_attach(process: &Process, settings: &mut Settings) -> Result<(), Box
     )
     .await;
 
-    let unity = UnityImage::new(process, &module, &image);
+    let unity = UnityImage::new(process, Rc::new(module), image);
     let mut memory = Memory::new(unity);
     let mut measured_state = MeasuredState::default();
 
