@@ -10,7 +10,6 @@ use crate::settings::Settings;
 use crate::util::format_seconds;
 use asr::future::retry;
 use asr::game_engine::unity::mono::{Image, Module};
-use asr::game_engine::unity::scene_manager::SceneManager;
 use asr::settings::Gui;
 use asr::timer::{
     pause_game_time, reset, resume_game_time, set_game_time, set_variable, split, start, state,
@@ -64,6 +63,7 @@ async fn main() {
                 }
             })
             .await;
+        next_tick().await;
     }
 }
 
@@ -89,10 +89,11 @@ async fn on_attach(process: &Process, settings: &mut Settings) -> Result<(), Box
     .await;
 
     let unity = UnityImage::new(process, &module, &image);
-    let sm = SceneManager::attach(process)
-        .ok_or(SimpleError::from("failed to attach to asr scene manager"))?;
+    // let sm = SceneManager::attach(process)
+    //     .ok_or(SimpleError::from("failed to attach to asr scene manager"))?;
 
-    let mut memory = Memory::new(unity, &sm)?;
+    // let mut memory = Memory::new(unity, &sm)?;
+    let mut memory = Memory::new(unity)?;
     let mut measured_state = MeasuredState::default();
 
     while process.is_open() {
