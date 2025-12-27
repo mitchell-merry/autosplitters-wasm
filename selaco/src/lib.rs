@@ -333,7 +333,6 @@ impl_auto_splitter_state!(Watchers {
     level: Watcher<String>,
     playerstate: Watcher<PlayerState>,
     player_pos: Watcher<DVector3>,
-    objective_history: Watcher<Vec<Objective>>,
     objective_status: Watcher<HashMap<String, u32>>,
 });
 
@@ -375,7 +374,6 @@ impl Watchers {
         // let sorted_map: BTreeMap<_, _> = map.clone().into_iter().collect();
         // timer::set_variable("objective_status", &format!("{:#?}", sorted_map));
 
-        self.objective_history.update(Some(objective_history));
         self.objective_status.update(Some(map));
 
         // let mut actors = zdoom.level.get_actor_names(&classes.actor_class)?;

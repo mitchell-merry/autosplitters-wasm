@@ -5,7 +5,7 @@ use asr::settings::Gui;
 use asr::{future::next_tick, print_message, timer, watcher::Watcher, Error, Process};
 use std::collections::HashSet;
 use zdoom::{
-    player::{DVector3, PlayerState},
+    player::DVector3,
     GameAction, ZDoom, ZDoomVersion,
 };
 
@@ -165,7 +165,6 @@ pub fn get_ocean_health(process: &Process, zdoom: &mut ZDoom) -> Option<u32> {
 impl_auto_splitter_state!(Watchers {
     gameaction: Watcher<GameAction>,
     level: Watcher<String>,
-    playerstate: Watcher<PlayerState>,
     player_pos: Watcher<DVector3>,
     ocean_health: Watcher<Option<u32>>,
 });
@@ -181,8 +180,6 @@ impl Watchers {
         self.level.update(Some(level_name));
 
         let player = zdoom.player()?;
-        self.playerstate.update(Some(player.state()?.to_owned()));
-
         let player_pos = player.pos().map(|v| v.to_owned()).unwrap_or_default();
         self.player_pos.update(Some(player_pos));
 
