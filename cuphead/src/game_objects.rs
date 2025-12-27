@@ -7,6 +7,7 @@ use helpers::watchers::{ValueGetter, Watcher};
 use std::cell::{Cell, RefCell};
 use std::error::Error;
 use std::marker::PhantomData;
+use std::rc::Rc;
 
 fn get_scene_if_active(
     process: &Process,
@@ -30,7 +31,7 @@ fn get_scene_if_active(
 
 pub struct GameObjectActivePath<'a> {
     process: &'a Process,
-    scene_manager: &'a SceneManager,
+    scene_manager: Rc<SceneManager>,
 
     scene: &'static str,
     root_object_name: &'static str,
@@ -42,7 +43,7 @@ pub struct GameObjectActivePath<'a> {
 impl<'a> GameObjectActivePath<'a> {
     pub fn new(
         process: &'a Process,
-        scene_manager: &'a SceneManager,
+        scene_manager: Rc<SceneManager>,
         scene: &'static str,
         root_object_name: &'static str,
         path: &'static [&'static str],
@@ -60,7 +61,7 @@ impl<'a> GameObjectActivePath<'a> {
 
 impl<'a> ValueGetter<bool> for GameObjectActivePath<'a> {
     fn get(&self) -> Result<bool, Box<dyn Error>> {
-        let active_scene = get_scene_if_active(self.process, self.scene_manager, self.scene)
+        let active_scene = get_scene_if_active(self.process, &self.scene_manager, self.scene)
             .map_err(|e| {
                 self.cached_object.set(None);
                 e
@@ -73,14 +74,14 @@ impl<'a> ValueGetter<bool> for GameObjectActivePath<'a> {
                 let transform = active_scene
                     .find_transform(
                         self.process,
-                        self.scene_manager,
+                        &self.scene_manager,
                         self.root_object_name,
                         self.path,
                     )
                     .map_err(|_| SimpleError::from("couldnt find transform"))?;
 
                 transform
-                    .get_game_object(self.process, self.scene_manager)
+                    .get_game_object(self.process, &self.scene_manager)
                     .map_err(|_| SimpleError::from("couldnt get game_object"))?
             }
         };
@@ -88,7 +89,7 @@ impl<'a> ValueGetter<bool> for GameObjectActivePath<'a> {
         self.cached_object.set(Some(game_object.clone()));
 
         game_object
-            .is_active_in_hierarchy(self.process, self.scene_manager)
+            .is_active_in_hierarchy(self.process, &self.scene_manager)
             .map_err(|_| SimpleError::from("couldnt get is active").into())
     }
 }
@@ -108,8 +109,8 @@ struct MBFPInternal {
 pub struct MonoBehaviourFieldPath<'a, T: CheckedBitPattern> {
     _phantom: PhantomData<T>,
     process: &'a Process,
-    module: &'a Module,
-    scene_manager: &'a SceneManager,
+    module: Module,
+    scene_manager: Rc<SceneManager>,
 
     scene: &'static str,
     root_object_name: &'static str,
@@ -125,8 +126,8 @@ pub struct MonoBehaviourFieldPath<'a, T: CheckedBitPattern> {
 impl<'a, T: CheckedBitPattern> MonoBehaviourFieldPath<'a, T> {
     pub fn init(
         process: &'a Process,
-        module: &'a Module,
-        scene_manager: &'a SceneManager,
+        module: Module,
+        scene_manager: Rc<SceneManager>,
         scene: &'static str,
         root_object_name: &'static str,
         game_object_path: &'static [&'static str],
@@ -156,7 +157,7 @@ impl<'a, T: CheckedBitPattern> MonoBehaviourFieldPath<'a, T> {
 // FIXME: all of this is very jank
 impl<'a, T: CheckedBitPattern> ValueGetter<T> for MonoBehaviourFieldPath<'a, T> {
     fn get(&self) -> Result<T, Box<dyn Error>> {
-        let active_scene = get_scene_if_active(self.process, self.scene_manager, self.scene)
+        let active_scene = get_scene_if_active(self.process, &self.scene_manager, self.scene)
             .inspect_err(|_| self.cached_component.set(None))?;
 
         // this is pretty jank, but we're using the cached address if one exists
@@ -166,16 +167,16 @@ impl<'a, T: CheckedBitPattern> ValueGetter<T> for MonoBehaviourFieldPath<'a, T> 
                 let transform = active_scene
                     .find_transform(
                         self.process,
-                        self.scene_manager,
+                        &self.scene_manager,
                         self.root_object_name,
                         self.game_object_path,
                     )
                     .map_err(|_| SimpleError::from("couldnt find transform"))?;
 
                 transform
-                    .get_game_object(self.process, self.scene_manager)
+                    .get_game_object(self.process, &self.scene_manager)
                     .map_err(|_| SimpleError::from("couldnt get game_object"))?
-                    .get_class(self.process, self.scene_manager, self.component_type_name)
+                    .get_class(self.process, &self.scene_manager, self.component_type_name)
                     .map_err(|_| SimpleError::from("couldnt find component in game object"))?
             }
         };
@@ -198,11 +199,11 @@ impl<'a, T: CheckedBitPattern> ValueGetter<T> for MonoBehaviourFieldPath<'a, T> 
         }
 
         for i in inner.resolved_offsets..inner.depth {
-            let current_class = Class::from_object(self.process, self.module, current_object)
+            let current_class = Class::from_object(self.process, &self.module, current_object)
                 .map_err(|_| SimpleError::from("couldnt get class from object"))?;
 
             let offset = current_class
-                .get_field_offset(self.process, self.module, self.field_path[i])
+                .get_field_offset(self.process, &self.module, self.field_path[i])
                 .ok_or(SimpleError::from("couldnt get field from class"))?;
 
             inner.offsets[i] = offset as _;

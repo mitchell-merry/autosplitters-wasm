@@ -1,9 +1,12 @@
 use crate::enums::Levels;
+use crate::game_objects::{GameObjectActivePath, MonoBehaviourFieldPath};
+use asr::game_engine::unity::scene_manager::SceneManager;
 use asr::string::ArrayWString;
 use asr::{Address64, PointerSize};
 use helpers::watchers::unity::UnityImage;
 use helpers::watchers::Watcher;
 use std::error::Error;
+use std::rc::Rc;
 
 pub struct Offsets {
     pub string_contents: &'static str,
@@ -44,7 +47,10 @@ pub struct Memory<'a> {
 }
 
 impl<'a> Memory<'a> {
-    pub fn new(unity: UnityImage<'a>) -> Result<Memory<'a>, Box<dyn Error>> {
+    pub fn new(
+        unity: UnityImage<'a>,
+        scene_manager: Rc<SceneManager>,
+    ) -> Result<Memory<'a>, Box<dyn Error>> {
         let offsets = Offsets::new(unity.module.get_pointer_size());
         Ok(Memory {
             done_loading: Watcher::from(unity.path(
@@ -102,39 +108,36 @@ impl<'a> Memory<'a> {
                 &["<IsDicePalaceMain>k__BackingField"],
             ))
             .default(),
-            devil_bad_ending_active: Watcher::constant(false),
-            difficulty_ticker_started_counting: Watcher::constant(false),
-            difficulty_ticker_finished_counting: Watcher::constant(false),
-            // devil_bad_ending_active: Watcher::from(GameObjectActivePath::new(
-            //     unity.process,
-            //     sm,
-            //     "scene_cutscene_devil",
-            //     "Cutscene",
-            //     &["devil_cinematic_bad_ending_transition_0001"],
-            // ))
-            // .default(),
-            // difficulty_ticker_started_counting: Watcher::from(MonoBehaviourFieldPath::init(
-            //     unity.process,
-            //     unity.module,
-            //     sm,
-            //     "scene_win",
-            //     "WinScreen",
-            //     &["UI", "Canvas", "Scoring", "DifficultyTicker"],
-            //     "WinScreenTicker",
-            //     &["startedCounting"],
-            // )?)
-            // .default(),
-            // difficulty_ticker_finished_counting: Watcher::from(MonoBehaviourFieldPath::init(
-            //     unity.process,
-            //     unity.module,
-            //     sm,
-            //     "scene_win",
-            //     "WinScreen",
-            //     &["UI", "Canvas", "Scoring", "DifficultyTicker"],
-            //     "WinScreenTicker",
-            //     &["<FinishedCounting>k__BackingField"],
-            // )?)
-            // .default(),
+            devil_bad_ending_active: Watcher::from(GameObjectActivePath::new(
+                unity.process,
+                scene_manager.clone(),
+                "scene_cutscene_devil",
+                "Cutscene",
+                &["devil_cinematic_bad_ending_transition_0001"],
+            ))
+            .default(),
+            difficulty_ticker_started_counting: Watcher::from(MonoBehaviourFieldPath::init(
+                unity.process,
+                unity.module.clone(),
+                scene_manager.clone(),
+                "scene_win",
+                "WinScreen",
+                &["UI", "Canvas", "Scoring", "DifficultyTicker"],
+                "WinScreenTicker",
+                &["startedCounting"],
+            )?)
+            .default(),
+            difficulty_ticker_finished_counting: Watcher::from(MonoBehaviourFieldPath::init(
+                unity.process,
+                unity.module.clone(),
+                scene_manager.clone(),
+                "scene_win",
+                "WinScreen",
+                &["UI", "Canvas", "Scoring", "DifficultyTicker"],
+                "WinScreenTicker",
+                &["<FinishedCounting>k__BackingField"],
+            )?)
+            .default(),
         })
     }
 

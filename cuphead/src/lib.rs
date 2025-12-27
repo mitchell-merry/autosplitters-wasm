@@ -20,6 +20,7 @@ use asr::{future::next_tick, print_message, Process};
 use helpers::error::SimpleError;
 use helpers::watchers::unity::UnityImage;
 use std::error::Error;
+use std::rc::Rc;
 use std::time::Duration;
 
 asr::async_main!(stable);
@@ -116,9 +117,10 @@ async fn try_load<'a>(process: &'a Process) -> Result<Cuphead<'a>, Box<dyn Error
 
     let sm = SceneManager::attach(process)
         .ok_or(SimpleError::from("failed to attach to asr scene manager"))?;
+    let sm = Rc::new(sm);
     print_message("  => scene manager loaded, loading pointer paths");
 
-    let memory = Memory::new(unity)?;
+    let memory = Memory::new(unity, sm.clone())?;
     print_message("  => pointer paths loaded");
 
     Ok(Cuphead {
