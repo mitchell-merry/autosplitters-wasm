@@ -5,6 +5,7 @@ use std::collections::HashSet;
 // these names come from code directly
 #[derive(CheckedBitPattern, Clone, Copy, Debug, Default, PartialEq, Eq)]
 #[repr(u32)]
+#[allow(dead_code, non_camel_case_types)]
 pub enum Levels {
     #[default]
     /// this one is mine

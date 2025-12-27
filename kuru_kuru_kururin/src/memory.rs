@@ -30,6 +30,7 @@ bitflags! {
 // there's a sub-menu at 0x3000dcb (byte)
 #[derive(CheckedBitPattern, Clone, Copy, Default, PartialEq, Eq, Debug)]
 #[repr(u8)]
+#[allow(dead_code)]
 pub enum GameState {
     #[default]
     None = 0,

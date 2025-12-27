@@ -21,8 +21,6 @@ const PROCESS_NAMES: [&str; 1] = [
     "I Am Your Beast.exe",
 ];
 
-const SCENE_CUTSCENE_INTRO: &str = "scene_cutscene_intro";
-
 #[derive(Default)]
 struct MeasuredState {}
 
@@ -91,10 +89,10 @@ async fn on_attach(process: &Process, settings: &mut Settings) -> Result<(), Box
 }
 
 async fn tick<'a>(
-    process: &'a Process,
+    _process: &'a Process,
     memory: &Memory<'a>,
-    measured_state: &mut MeasuredState,
-    settings: &mut Settings,
+    _measured_state: &mut MeasuredState,
+    _settings: &mut Settings,
 ) -> Result<(), Box<dyn Error>> {
     set_variable("combat time", &format!("{}", memory.combat_time.current()?));
 

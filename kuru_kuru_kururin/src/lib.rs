@@ -74,6 +74,7 @@ bitflags! {
 
 #[derive(CheckedBitPattern, Clone, Copy, Default, PartialEq, Eq, Debug)]
 #[repr(u8)]
+#[allow(dead_code)]
 enum GameMode {
     #[default]
     None = 0,

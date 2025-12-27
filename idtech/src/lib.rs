@@ -9,8 +9,8 @@ use helpers::error::SimpleError;
 use typeinfo::*;
 
 pub struct IdTech<'a> {
-    process: &'a Process,
-    memory: Rc<Memory>,
+    _process: &'a Process,
+    _memory: Rc<Memory>,
     type_info: Rc<TypeInfoTools<'a>>,
 }
 
@@ -38,8 +38,8 @@ impl<'a> IdTech<'a> {
         let type_info = Rc::new(TypeInfoTools::try_load(process, typeinfo_instance)?);
 
         let idtech = IdTech {
-            process,
-            memory,
+            _process: process,
+            _memory: memory,
             type_info,
         };
 
@@ -132,7 +132,7 @@ fn scan<const N: usize>(
 pub struct Memory {
     typeinfo_addr: Address,
 
-    offsets: Offsets,
+    _offsets: Offsets,
 }
 
 impl Memory {
@@ -159,7 +159,7 @@ impl Memory {
 
         Ok(Memory {
             typeinfo_addr: find_addr_or_panic("typeinfo", process, module_range, typeinfo_sigs),
-            offsets: Offsets::new(version),
+            _offsets: Offsets::new(version),
         })
     }
 }

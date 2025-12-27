@@ -17,7 +17,7 @@ pub struct ClassTypeInfo<'a> {
     address: Address,
 
     pub name: String,
-    size: OnceCell<u32>,
+    _size: OnceCell<u32>,
     variables: OnceCell<HashMap<String, ClassVariableInfo<'a>>>,
 }
 
@@ -41,7 +41,7 @@ impl<'a> ClassTypeInfo<'a> {
             address,
             name,
 
-            size: OnceCell::new(),
+            _size: OnceCell::new(),
             variables: OnceCell::new(),
         })
     }

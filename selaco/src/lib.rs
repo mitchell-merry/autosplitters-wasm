@@ -166,7 +166,7 @@ async fn main() {
 struct FoundClasses<'a> {
     objectives_class: PClass<'a>,
     objective_class: PClass<'a>,
-    actor_class: PClass<'a>,
+    _actor_class: PClass<'a>,
 }
 
 #[derive(PartialEq)]
@@ -191,7 +191,7 @@ async fn on_attach(process: &Process, settings: &mut Settings) -> Result<(), Opt
             Ok(FoundClasses {
                 objectives_class,
                 objective_class,
-                actor_class,
+                _actor_class: actor_class,
             })
         },
     )
@@ -395,7 +395,7 @@ fn get_objective_status_map(objectives: &Vec<Objective>, map: &mut HashMap<Strin
 
 #[derive(Clone, Debug)]
 struct Objective {
-    title: String,
+    _title: String,
     tag: u32,
     status: u32,
     children: Vec<Objective>,
@@ -451,7 +451,7 @@ impl Objective {
         let children = read_objectives(process, address + children_offset, classes)?;
 
         Ok(Objective {
-            title,
+            _title: title,
             tag,
             status,
             children,

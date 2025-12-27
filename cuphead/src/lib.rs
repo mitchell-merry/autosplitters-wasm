@@ -89,7 +89,7 @@ async fn on_attach(process: &Process, settings: &mut Settings) -> Result<(), Box
 
         cuphead.memory.invalidate();
 
-        if let Err(err) = tick(&mut cuphead, settings).await {
+        if let Err(_err) = tick(&mut cuphead, settings).await {
             // print_message(&format!("tick failed: {err}"));
         }
     }
