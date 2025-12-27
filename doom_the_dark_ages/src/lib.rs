@@ -36,6 +36,7 @@ static GAME_SYSTEM_LOCAL_SIG: Signature<17> =
 
 #[derive(CheckedBitPattern, Clone, Copy, Debug, PartialEq)]
 #[repr(u32)]
+#[allow(dead_code)]
 enum IdGameSystemLocalState {
     MainMenu = 0,
     Loading = 1,

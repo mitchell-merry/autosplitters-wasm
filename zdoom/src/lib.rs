@@ -20,7 +20,7 @@ pub struct ZDoom<'a> {
     pub memory: Rc<Memory>,
     pub name_data: Rc<NameManager<'a>>,
     pub classes: OnceCell<HashMap<String, PClass<'a>>>,
-    actor_class: OnceCell<PClass<'a>>,
+    _actor_class: OnceCell<PClass<'a>>,
 
     pub level: Level<'a>,
     pub player: OnceCell<Player<'a>>,
@@ -72,7 +72,7 @@ impl<'a> ZDoom<'a> {
                 name_data,
                 level,
                 classes: OnceCell::new(),
-                actor_class: OnceCell::new(),
+                _actor_class: OnceCell::new(),
                 player: OnceCell::new(),
                 gameaction: OnceCell::new(),
             };
@@ -173,7 +173,6 @@ class TArray
             Ok(Player::new(
                 self.process,
                 self.memory.clone(),
-                self.name_data.clone(),
                 // 0x0 is the first index
                 self.memory.players_addr + 0x0,
                 actor_class,

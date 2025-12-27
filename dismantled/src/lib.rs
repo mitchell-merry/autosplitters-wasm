@@ -1,15 +1,12 @@
+#[macro_use]
+extern crate helpers;
 use asr::settings::gui::Title;
 use asr::settings::Gui;
 use asr::{future::next_tick, timer, watcher::Watcher, Error, Process};
 use std::collections::HashSet;
 use zdoom::pclass::PClass;
-use zdoom::{
-    player::{DVector3, PlayerState},
-    GameAction, ZDoom, ZDoomVersion,
-};
+use zdoom::{player::DVector3, GameAction, ZDoom, ZDoomVersion};
 
-#[macro_use]
-extern crate helpers;
 use helpers::{impl_auto_splitter_state, split};
 
 asr::async_main!(stable);
@@ -204,7 +201,6 @@ async fn on_attach(process: &Process, settings: &mut Settings) -> Result<(), Opt
 impl_auto_splitter_state!(Watchers {
     gameaction: Watcher<GameAction>,
     level: Watcher<String>,
-    playerstate: Watcher<PlayerState>,
     player_pos: Watcher<DVector3>,
     inventories: Watcher<HashSet<String>>,
 });
@@ -220,9 +216,6 @@ impl Watchers {
         self.level.update(Some(level_name));
 
         let player = zdoom.player()?;
-        let playerstate = player.state()?.to_owned();
-        self.playerstate.update(Some(playerstate));
-
         let player_pos = player.pos().map(|v| v.to_owned()).unwrap_or_default();
         self.player_pos.update(Some(player_pos));
 

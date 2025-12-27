@@ -26,8 +26,8 @@ const CLASS_TYPE_INFO_SIZE: u64 = 0x58;
 
 /** Mirrors the idTypeInfoTools class */
 pub struct TypeInfoTools<'a> {
-    process: &'a Process,
-    address: Address,
+    _process: &'a Process,
+    _address: Address,
 
     projects: HashMap<String, TypeInfoProject<'a>>,
 }
@@ -48,8 +48,8 @@ impl<'a> TypeInfoTools<'a> {
         }
 
         Ok(TypeInfoTools {
-            process,
-            address,
+            _process: process,
+            _address: address,
             projects,
         })
     }
@@ -61,8 +61,8 @@ impl<'a> TypeInfoTools<'a> {
 
 /** Mirrors the idTypeInfoTools::registeredTypeInfo_t class, which has a projectName */
 pub struct TypeInfoProject<'a> {
-    process: &'a Process,
-    address: Address,
+    _process: &'a Process,
+    _address: Address,
 
     name: String,
     classes: HashMap<String, ClassTypeInfo<'a>>,
@@ -127,8 +127,8 @@ impl<'a> TypeInfoProject<'a> {
         asr::print_message("    => finished preloading those classes");
 
         Ok(TypeInfoProject {
-            process,
-            address,
+            _process: process,
+            _address: address,
 
             name,
             classes,

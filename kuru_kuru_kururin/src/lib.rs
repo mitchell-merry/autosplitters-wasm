@@ -74,6 +74,7 @@ bitflags! {
 
 #[derive(CheckedBitPattern, Clone, Copy, Default, PartialEq, Eq, Debug)]
 #[repr(u8)]
+#[allow(dead_code)]
 enum GameMode {
     #[default]
     None = 0,
@@ -147,7 +148,7 @@ async fn on_attach(
         }
 
         if state() == TimerState::Running {
-            if get_setting("igt_mode", &settings_defaults)? {
+            if get_setting("igt_mode", settings_defaults)? {
                 set_game_time(get_in_game_time(watchers.time.current()?));
                 pause_game_time();
             } else {

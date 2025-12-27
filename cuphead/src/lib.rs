@@ -1,6 +1,5 @@
 extern crate helpers;
 mod enums;
-mod game_objects;
 mod memory;
 mod settings;
 mod util;
@@ -90,7 +89,7 @@ async fn on_attach(process: &Process, settings: &mut Settings) -> Result<(), Box
 
         cuphead.memory.invalidate();
 
-        if let Err(err) = tick(&mut cuphead, settings).await {
+        if let Err(_err) = tick(&mut cuphead, settings).await {
             // print_message(&format!("tick failed: {err}"));
         }
     }
@@ -151,7 +150,7 @@ async fn tick<'a>(
     );
     set_variable("insta", &format!("{}", memory.insta.current()?));
     let scene = String::from_utf16(memory.scene.current()?.as_slice())?;
-    set_variable("scene name", &format!("{}", scene));
+    set_variable("scene name", &scene.to_string());
     let previous_scene = match memory.scene.old() {
         Some(previous_scene) => String::from_utf16(previous_scene.as_slice())?,
         None => String::new(),

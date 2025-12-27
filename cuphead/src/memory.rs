@@ -1,9 +1,8 @@
 use crate::enums::Levels;
-use crate::game_objects::{GameObjectActivePath, MonoBehaviourFieldPath};
 use asr::game_engine::unity::scene_manager::SceneManager;
 use asr::string::ArrayWString;
 use asr::{Address64, PointerSize};
-use helpers::watchers::unity::UnityImage;
+use helpers::watchers::unity::{GameObjectActivePath, MonoBehaviourFieldPath, UnityImage};
 use helpers::watchers::Watcher;
 use std::error::Error;
 use std::rc::Rc;

@@ -14,9 +14,15 @@ members = [
     "zdoom"
 ]
 
-[build]
-rustflags = ["-Aclippy::field_is_never_read"]
-
 [workspace.dependencies]
 asr = { git = "https://github.com/mitchell-merry/asr", branch = "some-helpers" }
 #asr = { path = "../asr" }
+
+[profile.release]
+lto = true
+panic = "abort"
+codegen-units = 1
+strip = true
+
+[profile.release.build-override]
+opt-level = 0

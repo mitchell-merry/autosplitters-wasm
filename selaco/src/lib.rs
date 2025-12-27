@@ -166,7 +166,7 @@ async fn main() {
 struct FoundClasses<'a> {
     objectives_class: PClass<'a>,
     objective_class: PClass<'a>,
-    actor_class: PClass<'a>,
+    _actor_class: PClass<'a>,
 }
 
 #[derive(PartialEq)]
@@ -191,7 +191,7 @@ async fn on_attach(process: &Process, settings: &mut Settings) -> Result<(), Opt
             Ok(FoundClasses {
                 objectives_class,
                 objective_class,
-                actor_class,
+                _actor_class: actor_class,
             })
         },
     )
@@ -333,7 +333,6 @@ impl_auto_splitter_state!(Watchers {
     level: Watcher<String>,
     playerstate: Watcher<PlayerState>,
     player_pos: Watcher<DVector3>,
-    objective_history: Watcher<Vec<Objective>>,
     objective_status: Watcher<HashMap<String, u32>>,
 });
 
@@ -375,7 +374,6 @@ impl Watchers {
         // let sorted_map: BTreeMap<_, _> = map.clone().into_iter().collect();
         // timer::set_variable("objective_status", &format!("{:#?}", sorted_map));
 
-        self.objective_history.update(Some(objective_history));
         self.objective_status.update(Some(map));
 
         // let mut actors = zdoom.level.get_actor_names(&classes.actor_class)?;
@@ -395,7 +393,7 @@ fn get_objective_status_map(objectives: &Vec<Objective>, map: &mut HashMap<Strin
 
 #[derive(Clone, Debug)]
 struct Objective {
-    title: String,
+    _title: String,
     tag: u32,
     status: u32,
     children: Vec<Objective>,
@@ -451,7 +449,7 @@ impl Objective {
         let children = read_objectives(process, address + children_offset, classes)?;
 
         Ok(Objective {
-            title,
+            _title: title,
             tag,
             status,
             children,

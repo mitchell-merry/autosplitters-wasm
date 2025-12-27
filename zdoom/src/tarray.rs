@@ -31,29 +31,25 @@ impl<'a> TArray<'a> {
     ///
     /// This is useful when you don't want to read the full content of each item,
     /// or you don't know the exact structure of the item (e.g. it's dependent on zdoom version)
-    pub fn iter_addr(&self, item_size: u64) -> Result<TArrayAddressIterator<'a>, Error> {
+    pub fn iter_addr(&self, item_size: u64) -> Result<TArrayAddressIterator, Error> {
         TArrayAddressIterator::new(self.process, self.address, item_size)
     }
 }
 
-pub struct TArrayAddressIterator<'a> {
-    process: &'a Process,
-    address: Address,
+pub struct TArrayAddressIterator {
     item_size: u64,
     array_addr: Address,
     size: u32,
     index: u32,
 }
 
-impl<'a> TArrayAddressIterator<'a> {
+impl TArrayAddressIterator {
     fn new(
-        process: &'a Process,
+        process: &Process,
         address: Address,
         item_size: u64,
-    ) -> Result<TArrayAddressIterator<'a>, Error> {
+    ) -> Result<TArrayAddressIterator, Error> {
         Ok(TArrayAddressIterator {
-            process,
-            address,
             item_size,
             array_addr: process.read::<u64>(address + 0x0_u64)?.into(),
             size: process.read(address + 0x8_u64)?,
@@ -62,7 +58,7 @@ impl<'a> TArrayAddressIterator<'a> {
     }
 }
 
-impl<'a> Iterator for TArrayAddressIterator<'a> {
+impl Iterator for TArrayAddressIterator {
     type Item = Address;
 
     fn next(&mut self) -> Option<Self::Item> {

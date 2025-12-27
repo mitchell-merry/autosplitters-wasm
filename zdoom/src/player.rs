@@ -7,7 +7,7 @@ use once_cell::unsync::OnceCell;
 
 use super::{pclass::PClass, Memory};
 
-const PLAYER_ACTOR_OFFSET: u64 = 0x0;
+const _PLAYER_ACTOR_OFFSET: u64 = 0x0;
 const PLAYER_STATE_OFFSET: u64 = 0x8;
 
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -43,7 +43,6 @@ pub enum PlayerState {
 pub struct Player<'a> {
     process: &'a Process,
     memory: Rc<Memory>,
-    name_manager: Rc<NameManager<'a>>,
     address: Address,
     actor_class: PClass<'a>,
     actor: OnceCell<Address>,
@@ -55,14 +54,12 @@ impl<'a> Player<'a> {
     pub fn new(
         process: &'a Process,
         memory: Rc<Memory>,
-        name_manager: Rc<NameManager<'a>>,
         address: Address,
         actor_class: PClass<'a>,
     ) -> Self {
         Player {
             process,
             memory,
-            name_manager,
             address,
             actor_class,
             actor: OnceCell::new(),
