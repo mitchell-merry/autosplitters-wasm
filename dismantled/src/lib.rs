@@ -5,10 +5,7 @@ use asr::settings::Gui;
 use asr::{future::next_tick, timer, watcher::Watcher, Error, Process};
 use std::collections::HashSet;
 use zdoom::pclass::PClass;
-use zdoom::{
-    player::DVector3,
-    GameAction, ZDoom, ZDoomVersion,
-};
+use zdoom::{player::DVector3, GameAction, ZDoom, ZDoomVersion};
 
 use helpers::{impl_auto_splitter_state, split};
 
