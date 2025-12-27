@@ -70,7 +70,7 @@ async fn on_attach(process: &Process, settings: &mut Settings) -> Result<(), Box
     )
     .await;
 
-    let unity = UnityImage::new(process, &module, &image);
+    let unity = UnityImage::new(process, module, image);
     let mut memory = Memory::new(unity);
     let mut measured_state = MeasuredState::default();
 

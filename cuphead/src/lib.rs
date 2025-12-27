@@ -9,7 +9,8 @@ use crate::memory::Memory;
 use crate::settings::Settings;
 use crate::util::format_seconds;
 use asr::future::retry;
-use asr::game_engine::unity::mono::{Image, Module};
+use asr::game_engine::unity::mono::Module;
+use asr::game_engine::unity::scene_manager::SceneManager;
 use asr::settings::Gui;
 use asr::timer::{
     pause_game_time, reset, resume_game_time, set_game_time, set_variable, split, start, state,
@@ -19,6 +20,7 @@ use asr::{future::next_tick, print_message, Process};
 use helpers::error::SimpleError;
 use helpers::watchers::unity::UnityImage;
 use std::error::Error;
+use std::time::Duration;
 
 asr::async_main!(stable);
 
@@ -67,48 +69,61 @@ async fn main() {
     }
 }
 
+struct Cuphead<'a> {
+    memory: Memory<'a>,
+    measured_state: MeasuredState,
+}
+
 async fn on_attach(process: &Process, settings: &mut Settings) -> Result<(), Box<dyn Error>> {
-    let (module, image) = helpers::try_load::wait_try_load_millis::<(Module, Image), _, _>(
-        async || {
-            print_message("  => loading module");
-            let module = Module::attach_auto_detect(process)
-                .ok_or(SimpleError::from("mono module not found"))?;
-            print_message(&format!(
-                "  => module loaded (detected {:?}, {:?}), loading image",
-                module.get_version(),
-                module.get_pointer_size()
-            ));
-            let image = module
-                .get_default_image(process)
-                .ok_or(SimpleError::from("default image not found"))?;
+    let mut cuphead =
+        helpers::try_load::wait_try_load_millis(|| try_load(process), Duration::from_millis(500))
+            .await;
 
-            Ok((module, image))
-        },
-        std::time::Duration::from_millis(500),
-    )
-    .await;
-
-    let unity = UnityImage::new(process, &module, &image);
-    // let sm = SceneManager::attach(process)
-    //     .ok_or(SimpleError::from("failed to attach to asr scene manager"))?;
-
-    // let mut memory = Memory::new(unity, &sm)?;
-    let mut memory = Memory::new(unity)?;
-    let mut measured_state = MeasuredState::default();
+    next_tick().await;
 
     while process.is_open() {
         settings.update();
 
         next_tick().await;
 
-        memory.invalidate();
+        cuphead.memory.invalidate();
 
-        if let Err(err) = tick(process, &memory, &mut measured_state, settings).await {
+        if let Err(err) = tick(&mut cuphead, settings).await {
             // print_message(&format!("tick failed: {err}"));
         }
     }
 
     Ok(())
+}
+
+async fn try_load<'a>(process: &'a Process) -> Result<Cuphead<'a>, Box<dyn Error>> {
+    print_message("  => loading module");
+    let module =
+        Module::attach_auto_detect(process).ok_or(SimpleError::from("mono module not found"))?;
+    print_message(&format!(
+        "  => module loaded (detected {:?}, {:?}), loading image",
+        module.get_version(),
+        module.get_pointer_size()
+    ));
+    next_tick().await;
+
+    let image = module
+        .get_default_image(process)
+        .ok_or(SimpleError::from("default image not found"))?;
+    let unity = UnityImage::new(process, module, image);
+    print_message("  => default image loaded, loading scene manager");
+
+    let sm = SceneManager::attach(process)
+        .ok_or(SimpleError::from("failed to attach to asr scene manager"))?;
+    print_message("  => scene manager loaded, loading pointer paths");
+
+    let memory = Memory::new(unity)?;
+    print_message("  => pointer paths loaded");
+
+    Ok(Cuphead {
+        memory,
+        measured_state: MeasuredState::default(),
+    })
 }
 
 fn split_log(condition: bool, string: &str) -> bool {
@@ -120,12 +135,11 @@ fn split_log(condition: bool, string: &str) -> bool {
 }
 
 async fn tick<'a>(
-    process: &'a Process,
-    memory: &Memory<'a>,
-    measured_state: &mut MeasuredState,
+    cuphead: &mut Cuphead<'a>,
     settings: &mut Settings,
 ) -> Result<(), Box<dyn Error>> {
-    // Intended for users:
+    let memory = &cuphead.memory;
+    let measured_state = &mut cuphead.measured_state;
 
     set_variable(
         "done loading scene async",

@@ -6,14 +6,15 @@ use bytemuck::CheckedBitPattern;
 use std::error::Error;
 
 #[cfg(feature = "unity")]
+#[derive(Clone)]
 pub struct UnityImage<'a> {
     pub process: &'a Process,
-    pub module: &'a Module,
-    pub image: &'a Image,
+    pub module: Module,
+    pub image: Image,
 }
 
 impl<'a> UnityImage<'a> {
-    pub fn new(process: &'a Process, module: &'a Module, image: &'a Image) -> Self {
+    pub fn new(process: &'a Process, module: Module, image: Image) -> Self {
         UnityImage {
             process,
             module,
@@ -29,7 +30,7 @@ impl<'a> UnityImage<'a> {
     ) -> UnityPointerPath<'a> {
         UnityPointerPath {
             process: self.process,
-            module: self.module,
+            module: self.module.clone(),
             image: self.image,
             pointer: UnityPointer::new(class_name, nr_of_parents, fields),
         }
@@ -39,15 +40,15 @@ impl<'a> UnityImage<'a> {
 #[cfg(feature = "unity")]
 pub struct UnityPointerPath<'a> {
     process: &'a Process,
-    module: &'a Module,
-    image: &'a Image,
+    module: Module,
+    image: Image,
     pointer: UnityPointer<128>,
 }
 
 impl<'a, T: CheckedBitPattern> ValueGetter<T> for UnityPointerPath<'a> {
     fn get(&self) -> Result<T, Box<dyn Error>> {
         self.pointer
-            .deref(self.process, self.module, self.image)
+            .deref(self.process, &self.module, &self.image)
             .map_err(|_| SimpleError::from("unable to read unity pointer").into())
     }
 }
