@@ -20,7 +20,7 @@ checksum = "7c02d123df017efcdfbd739ef81735b36c5ba83ec3c59c80a9d7ecc718f92e50"
 [[package]]
 name = "asr"
 version = "0.1.0"
-source = "git+https://github.com/mitchell-merry/asr?branch=evil-branch#c2c1132e91133f29ca82b853efd9b237c5ad947e"
+source = "git+https://github.com/mitchell-merry/asr?branch=evil-branch#ac5cd3dbfcb386a50f52f5970b02ec9f6a224b63"
 dependencies = [
  "arrayvec",
  "asr-derive",
@@ -34,7 +34,7 @@ dependencies = [
 [[package]]
 name = "asr-derive"
 version = "0.1.0"
-source = "git+https://github.com/mitchell-merry/asr?branch=evil-branch#c2c1132e91133f29ca82b853efd9b237c5ad947e"
+source = "git+https://github.com/mitchell-merry/asr?branch=evil-branch#ac5cd3dbfcb386a50f52f5970b02ec9f6a224b63"
 dependencies = [
  "heck",
  "proc-macro2",
