@@ -51,6 +51,7 @@ async fn main() {
     print_message("Hello, World!");
 
     let mut settings = Settings::register();
+    settings.update();
 
     loop {
         let process = retry(|| PROCESS_NAMES.iter().find_map(|name| Process::attach(name))).await;
