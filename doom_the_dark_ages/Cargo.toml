@@ -11,3 +11,4 @@ idtech = { path = "../idtech" }
 once_cell = "1.19.0"
 
 [lib]
+crate-type = ["cdylib"]

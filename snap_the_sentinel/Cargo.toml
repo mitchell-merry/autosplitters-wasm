@@ -9,3 +9,4 @@ helpers = { path = "../helpers" }
 zdoom = { path = "../zdoom" }
 
 [lib]
+crate-type = ["cdylib"]
