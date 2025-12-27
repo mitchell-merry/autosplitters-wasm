@@ -62,10 +62,7 @@ impl<'a> GameObjectActivePath<'a> {
 impl<'a> ValueGetter<bool> for GameObjectActivePath<'a> {
     fn get(&self) -> Result<bool, Box<dyn Error>> {
         let active_scene = get_scene_if_active(self.process, &self.scene_manager, self.scene)
-            .map_err(|e| {
-                self.cached_object.set(None);
-                e
-            })?;
+            .inspect_err(|e| self.cached_object.set(None))?;
 
         // this is pretty jank, but we're using the cached address if one exists
         let game_object = match self.cached_object.take() {
