@@ -109,7 +109,7 @@ struct MBFPInternal {
 pub struct MonoBehaviourFieldPath<'a, T: CheckedBitPattern> {
     _phantom: PhantomData<T>,
     process: &'a Process,
-    module: Module,
+    module: Rc<Module>,
     scene_manager: Rc<SceneManager>,
 
     scene: &'static str,
@@ -126,7 +126,7 @@ pub struct MonoBehaviourFieldPath<'a, T: CheckedBitPattern> {
 impl<'a, T: CheckedBitPattern> MonoBehaviourFieldPath<'a, T> {
     pub fn init(
         process: &'a Process,
-        module: Module,
+        module: Rc<Module>,
         scene_manager: Rc<SceneManager>,
         scene: &'static str,
         root_object_name: &'static str,

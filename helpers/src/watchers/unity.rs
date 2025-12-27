@@ -4,17 +4,18 @@ use asr::game_engine::unity::mono::{Image, Module, UnityPointer};
 use asr::Process;
 use bytemuck::CheckedBitPattern;
 use std::error::Error;
+use std::rc::Rc;
 
 #[cfg(feature = "unity")]
 #[derive(Clone)]
 pub struct UnityImage<'a> {
     pub process: &'a Process,
-    pub module: Module,
+    pub module: Rc<Module>,
     pub image: Image,
 }
 
 impl<'a> UnityImage<'a> {
-    pub fn new(process: &'a Process, module: Module, image: Image) -> Self {
+    pub fn new(process: &'a Process, module: Rc<Module>, image: Image) -> Self {
         UnityImage {
             process,
             module,
@@ -40,7 +41,7 @@ impl<'a> UnityImage<'a> {
 #[cfg(feature = "unity")]
 pub struct UnityPointerPath<'a> {
     process: &'a Process,
-    module: Module,
+    module: Rc<Module>,
     image: Image,
     pointer: UnityPointer<128>,
 }

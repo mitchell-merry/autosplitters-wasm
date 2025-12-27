@@ -102,6 +102,7 @@ async fn try_load<'a>(process: &'a Process) -> Result<Cuphead<'a>, Box<dyn Error
     print_message("  => loading module");
     let module =
         Module::attach_auto_detect(process).ok_or(SimpleError::from("mono module not found"))?;
+    let module = Rc::new(module);
     print_message(&format!(
         "  => module loaded (detected {:?}, {:?}), loading image",
         module.get_version(),

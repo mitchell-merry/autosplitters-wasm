@@ -18,5 +18,5 @@ members = [
 rustflags = ["-Aclippy::field_is_never_read"]
 
 [workspace.dependencies]
-asr = { git = "https://github.com/mitchell-merry/asr", branch = "evil-branch" }
+asr = { git = "https://github.com/mitchell-merry/asr", branch = "some-helpers" }
 #asr = { path = "../asr" }
