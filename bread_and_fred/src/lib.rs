@@ -8,6 +8,7 @@ use asr::future::retry;
 use asr::game_engine::unity::mono::Module;
 use asr::game_engine::unity::scene_manager::SceneManager;
 use asr::settings::Gui;
+use asr::timer::set_variable;
 use asr::{future::next_tick, print_message, Process};
 use helpers::error::SimpleError;
 use helpers::watchers::unity::UnityImage;
@@ -115,7 +116,12 @@ fn split_log(condition: bool, string: &str) -> bool {
 }
 
 async fn tick<'a>(game: &mut Game<'a>, _settings: &mut Settings) -> Result<(), Box<dyn Error>> {
-    let _memory = &game.memory;
+    let memory = &game.memory;
+
+    set_variable(
+        "global timer instance",
+        &format!("{:?}", memory.global_timer.current()),
+    );
 
     Ok(())
 }
