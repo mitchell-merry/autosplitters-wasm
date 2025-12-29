@@ -49,7 +49,6 @@ async fn main() {
     }));
 
     print_message("Hello, World!");
-    print_message("Hi, World!");
 
     let mut settings = Settings::register();
     settings.update();
