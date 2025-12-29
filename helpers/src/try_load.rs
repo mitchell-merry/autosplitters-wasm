@@ -1,6 +1,6 @@
+use core::time::Duration;
 use std::error::Error;
 use std::future::Future;
-use std::time::Duration;
 
 pub async fn wait_try_load<T, F, Fut>(load_fn: F) -> T
 where

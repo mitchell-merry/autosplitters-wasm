@@ -8,13 +8,13 @@ use asr::future::retry;
 use asr::game_engine::unity::mono::Module;
 use asr::game_engine::unity::scene_manager::SceneManager;
 use asr::settings::Gui;
-use asr::timer::set_variable;
-use asr::{future::next_tick, print_message, Process};
+use asr::timer::{pause_game_time, resume_game_time, set_game_time, set_variable, TimerState};
+use asr::{future::next_tick, print_message, timer, Process};
+use core::time::Duration;
 use helpers::error::SimpleError;
 use helpers::watchers::unity::UnityImage;
 use std::error::Error;
 use std::rc::Rc;
-use std::time::Duration;
 
 asr::async_main!(stable);
 
@@ -93,6 +93,16 @@ async fn try_load<'a>(process: &'a Process) -> Result<Game<'a>, Box<dyn Error>> 
     let image = module
         .get_default_image(process)
         .ok_or(SimpleError::from("default image not found"))?;
+
+    // print_message(&format!(
+    //     "off {:X?}",
+    //     image
+    //         .get_class(process, &module, "Timer")
+    //         .unwrap()
+    //         .get_field_offset(process, &module, "_currentRunTimer")
+    //         .unwrap()
+    // ));
+
     let unity = UnityImage::new(process, module, image);
     print_message("  => default image loaded, loading scene manager");
 
@@ -118,10 +128,51 @@ fn split_log(condition: bool, string: &str) -> bool {
 async fn tick<'a>(game: &mut Game<'a>, _settings: &mut Settings) -> Result<(), Box<dyn Error>> {
     let memory = &game.memory;
 
+    // set_variable("timer instance", &format!("{:?}", memory.timer.current()));
+    let elapsed = memory.time.current()? as f32 / 10_000_000.0;
+    set_variable("time", &format!("{:?}", elapsed));
     set_variable(
-        "global timer instance",
-        &format!("{:?}", memory.global_timer.current()),
+        "started timestamp",
+        &format!("{:?}", memory.started_timestamp.current()?),
     );
+    set_variable(
+        "current timestamp",
+        &format!(
+            "{:?}",
+            // Instant::now().duration_since(Instant::from(memory.started_timestamp.current()?))
+            std::time::SystemTime::now()
+        ),
+    );
+    set_variable("running", &format!("{:?}", memory.running.current()?));
+    // set_variable(
+    //     "game manager instance",
+    //     &format!("{:?}", memory.game_manager.current()),
+    // );
+
+    if timer::state() == TimerState::NotRunning
+        && memory.running.changed()?
+        && memory.running.current()?
+    {
+        timer::start();
+    }
+
+    if timer::state() == TimerState::Running {
+        if memory.running.current()? {
+            resume_game_time();
+        } else {
+            pause_game_time();
+        }
+
+        if memory.time.changed()? {
+            let time = asr::time::Duration::nanoseconds(memory.time.current()? as i64 * 100);
+            print_message(&format!(
+                "setting game time to {}",
+                time.whole_milliseconds()
+            ));
+            pause_game_time();
+            set_game_time(time);
+        }
+    }
 
     Ok(())
 }

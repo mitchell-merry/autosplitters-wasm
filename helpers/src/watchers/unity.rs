@@ -49,11 +49,17 @@ pub struct UnityPointerPath<'a> {
     pointer: UnityPointer<128>,
 }
 
-impl<'a, T: CheckedBitPattern> ValueGetter<T> for UnityPointerPath<'a> {
-    fn get(&self) -> Result<T, Box<dyn Error>> {
+impl<'a> UnityPointerPath<'a> {
+    pub fn read<T: CheckedBitPattern>(&self) -> Result<T, Box<dyn Error>> {
         self.pointer
             .deref(self.process, &self.module, &self.image)
             .map_err(|_| SimpleError::from("unable to read unity pointer").into())
+    }
+}
+
+impl<'a, T: CheckedBitPattern> ValueGetter<T> for UnityPointerPath<'a> {
+    fn get(&self) -> Result<T, Box<dyn Error>> {
+        self.read()
     }
 }
 
