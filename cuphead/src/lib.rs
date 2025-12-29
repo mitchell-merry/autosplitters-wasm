@@ -203,12 +203,6 @@ async fn tick<'a>(
             memory.difficulty_ticker_finished_counting.current()?
         ),
     );
-    set_variable("grade", &format!("{:?}", memory.level_grade.current()?));
-    set_variable(
-        "difficulty",
-        &format!("{:?}", memory.level_difficulty.current()?),
-    );
-
     if memory.lsd_time.changed()? && memory.lsd_time.current()? != 0f32 {
         measured_state.lsd_time = memory.lsd_time.current()?;
         measured_state.level_updated_lsd = true
