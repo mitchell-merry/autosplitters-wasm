@@ -1,3 +1,11 @@
+use std::error::Error;
+use crate::memory::Memory;
+use crate::settings::Settings;
+use crate::enums::Levels;
+use crate::enums::Grade;
+use crate::enums::Mode;
+use asr::{print_message};
+
 pub fn format_seconds(secs: f32) -> String {
     let hours = (secs / 3600.0).floor() as u64;
     let minutes = ((secs % 3600.0) / 60.0).floor() as u64;
@@ -14,3 +22,5 @@ pub fn format_seconds(secs: f32) -> String {
         format!("{seconds:.2}")
     }
 }
+
+
