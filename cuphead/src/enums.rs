@@ -180,9 +180,6 @@ pub enum LevelType {
 }
 impl LevelType {
     pub fn is_highest_grade(&self, grade: Grade, difficulty: Mode) -> bool {
-        // if !settings.split_highest_grade {
-        //     return Ok(true);
-        // }
         match self {
             LevelType::Platformer => grade == Grade::P,
             LevelType::Boss => match difficulty {
