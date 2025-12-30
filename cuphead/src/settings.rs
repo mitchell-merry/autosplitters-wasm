@@ -119,6 +119,11 @@ pub struct Settings {
     #[default = false]
     pub split_tutorial: bool,
 
+    /// Split on Highest Grade ONLY
+    ///
+    /// This is useful for categories such as All S+P Grades
+    pub split_highest_grade: bool,
+
     /// Split on the gauntlet
     pub split_chess: ChessPieceSetting,
 }
