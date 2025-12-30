@@ -21,6 +21,7 @@ use helpers::watchers::unity::UnityImage;
 use std::error::Error;
 use std::rc::Rc;
 use std::time::Duration;
+use std::time::Instant;
 
 asr::async_main!(stable);
 
@@ -35,12 +36,21 @@ const SCENE_CUTSCENE_INTRO: &str = "scene_cutscene_intro";
 const SCENE_CUTSCENE_KING_DICE_CONTRACT: &str = "scene_cutscene_kingdice";
 const SCENE_CUTSCENE_DEVIL: &str = "scene_cutscene_devil";
 const SCENE_TITLE_SCREEN: &str = "scene_title";
+const SCENE_SCOREBOARD: &str = "scene_win";
 
 #[derive(Default)]
 struct MeasuredState {
     level_updated_lsd: bool,
     lsd_time: f32,
     was_on_scorecard: bool,
+}
+
+#[derive(Default)]
+struct StarSkipData {
+    difficulty_ticker_start_time: Option<Instant>,
+    difficulty_ticker_end_time: Option<Instant>,
+    star_skip_counter: i32,
+    star_skip_counter_decimal: f32,
 }
 
 async fn main() {
@@ -73,6 +83,7 @@ async fn main() {
 struct Cuphead<'a> {
     memory: Memory<'a>,
     measured_state: MeasuredState,
+    star_skip_data: StarSkipData,
 }
 
 async fn on_attach(process: &Process, settings: &mut Settings) -> Result<(), Box<dyn Error>> {
@@ -126,6 +137,7 @@ async fn try_load<'a>(process: &'a Process) -> Result<Cuphead<'a>, Box<dyn Error
     Ok(Cuphead {
         memory,
         measured_state: MeasuredState::default(),
+        star_skip_data: StarSkipData::default(),
     })
 }
 
@@ -191,6 +203,7 @@ async fn tick<'a>(
         "devil bad ending active",
         &format!("{:?}", memory.devil_bad_ending_active.current()?),
     );
+    // TODO: delete dis
     set_variable(
         "difficulty ticker started counting",
         &format!("{:?}", memory.difficulty_ticker_started_counting.current()?),
@@ -337,10 +350,74 @@ async fn tick<'a>(
         {
             reset();
         }
+
+        if scene == SCENE_SCOREBOARD {
+            monitor_star_skip(memory);
+        }
     }
 
     if measured_state.was_on_scorecard && memory.done_loading.changed()? && memory.is_loading()? {
         measured_state.was_on_scorecard = false;
+    }
+
+    Ok(())
+}
+
+pub fn monitor_star_skip(memory: &Memory, star_skip_data: &StarSkipData) -> Result<Box<dyn Error>> {
+    let difficultyTickerStartedCounting = memory.difficulty_ticker_started_counting.current()?;
+    let difficultyTickerFinishedCounting = memory.difficulty_ticker_finished_counting.current()?;
+    if !difficultyTickerStartedCounting {
+        star_skip_data.difficulty_ticker_start_time = None;
+        star_skip_data.difficulty_ticker_end_time = None;
+        return Ok(());
+        // zero out difficultyTickerStartTime and difficultyTickerEndTime, then quit early
+    }
+
+    if star_skip_data.difficulty_ticker_start_time.is_none() {
+        star_skip_data.difficulty_ticker_start_time = Some(Instant::now());
+    }
+
+    if !difficultyTickerFinishedCounting || star_skip_data.difficulty_ticker_end_time.is_some() {
+        return Ok(());
+    }
+
+    star_skip_data.difficulty_ticker_end_time = Some(Instant::now());
+
+    let diff: Duration = star_skip_data
+        .difficulty_ticker_end_time?
+        .duration_since(star_skip_data.difficulty_ticker_start_time?);
+    let ms = diff.as_millis() as u64;
+
+    match memory.level_difficulty.current()? {
+        Mode::Easy => {
+            if ms < 100 {
+                star_skip_data.star_skip_counter += 1;
+                star_skip_data.star_skip_counter_decimal += 1.0;
+            }
+        }
+
+        Mode::Normal => {
+            if ms < 100 {
+                star_skip_data.star_skip_counter += 2;
+                star_skip_data.star_skip_counter_decimal += 1.0;
+            } else if ms < 600 {
+                star_skip_data.star_skip_counter += 1;
+                star_skip_data.star_skip_counter_decimal += 0.5;
+            }
+        }
+
+        Mode::Hard => {
+            if ms < 100 {
+                star_skip_data.star_skip_counter += 3;
+                star_skip_data.star_skip_counter_decimal += 1.0;
+            } else if ms < 600 {
+                star_skip_data.star_skip_counter += 2;
+                star_skip_data.star_skip_counter_decimal += 2.0 / 3.0;
+            } else if ms < 1100 {
+                star_skip_data.star_skip_counter += 1;
+                star_skip_data.star_skip_counter_decimal += 1.0 / 3.0;
+            }
+        }
     }
 
     Ok(())
