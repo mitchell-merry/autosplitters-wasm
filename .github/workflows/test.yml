@@ -1,7 +1,12 @@
 name: Test
 
 on:
-  - push
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
   clippy:
@@ -18,7 +23,7 @@ jobs:
           targets: 'wasm32-wasip1'
 
       - name: Run Clippy
-        run: cargo clippy --all-features
+        run: cargo clippy --all-features -- -D warnings
 
   format:
     name: Check formatting
