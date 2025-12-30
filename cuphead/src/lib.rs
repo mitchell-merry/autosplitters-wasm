@@ -202,6 +202,7 @@ async fn tick<'a>(
             memory.difficulty_ticker_finished_counting.current()?
         ),
     );
+
     if memory.lsd_time.changed()? && memory.lsd_time.current()? != 0f32 {
         measured_state.lsd_time = memory.lsd_time.current()?;
         measured_state.level_updated_lsd = true

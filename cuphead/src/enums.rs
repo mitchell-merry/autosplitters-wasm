@@ -1,9 +1,6 @@
-use crate::memory::Memory;
 use crate::settings::{ChessPieceSetting, Settings};
-use asr::print_message;
 use bytemuck::CheckedBitPattern;
 use std::collections::HashSet;
-use std::error::Error;
 
 // these names come from code directly
 #[derive(CheckedBitPattern, Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -178,6 +175,7 @@ pub enum LevelType {
     Mausoleum,
     ChessPiece,
 }
+
 impl LevelType {
     pub fn is_highest_grade(&self, grade: Grade, difficulty: Mode) -> bool {
         match self {
