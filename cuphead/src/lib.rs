@@ -352,7 +352,7 @@ async fn tick<'a>(
         }
 
         if scene == SCENE_SCOREBOARD {
-            monitor_star_skip(memory);
+            monitor_star_skip(memory, &cuphead.star_skip_data);
         }
     }
 
@@ -370,7 +370,6 @@ pub fn monitor_star_skip(memory: &Memory, star_skip_data: &StarSkipData) -> Resu
         star_skip_data.difficulty_ticker_start_time = None;
         star_skip_data.difficulty_ticker_end_time = None;
         return Ok(());
-        // zero out difficultyTickerStartTime and difficultyTickerEndTime, then quit early
     }
 
     if star_skip_data.difficulty_ticker_start_time.is_none() {
