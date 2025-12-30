@@ -312,7 +312,12 @@ async fn tick<'a>(
             split_log(
                 level.is_split_enabled(settings)
                     && memory.level_won.old().is_some_and(|w| !w)
-                    && memory.level_won.current()?,
+                    && memory.level_won.current()?
+                    && (!settings.split_highest_grade
+                        || level.get_type().is_highest_grade(
+                            memory.level_grade.current()?,
+                            memory.level_difficulty.current()?,
+                        )),
                 &format!("knockout ({:?})", level),
             )
         } else {
@@ -323,7 +328,12 @@ async fn tick<'a>(
                 level.is_split_enabled(settings)
                     && measured_state.was_on_scorecard
                     && memory.done_loading.changed()?
-                    && memory.is_loading()?,
+                    && memory.is_loading()?
+                    && (!settings.split_highest_grade
+                        || level.get_type().is_highest_grade(
+                            memory.level_grade.current()?,
+                            memory.level_difficulty.current()?,
+                        )),
                 &format!("after scoreboard ({:?})", level),
             )
         };

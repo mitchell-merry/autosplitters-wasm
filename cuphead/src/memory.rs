@@ -1,4 +1,6 @@
+use crate::enums::Grade;
 use crate::enums::Levels;
+use crate::enums::Mode;
 use asr::game_engine::unity::scene_manager::SceneManager;
 use asr::string::ArrayWString;
 use asr::{Address64, PointerSize};
@@ -36,6 +38,8 @@ pub struct Memory<'a> {
     pub level_won: Watcher<'a, bool>,
     pub level_ending: Watcher<'a, bool>,
     pub level_time: Watcher<'a, f32>,
+    pub level_grade: Watcher<'a, Grade>,
+    pub level_difficulty: Watcher<'a, Mode>,
     pub lsd_time: Watcher<'a, f32>,
     pub kd_spaces_moved: Watcher<'a, i32>,
     pub level_is_dice: Watcher<'a, bool>,
@@ -83,6 +87,14 @@ impl<'a> Memory<'a> {
                 &["<Current>k__BackingField", "<LevelTime>k__BackingField"],
             ))
             .default_given(0f32),
+            level_grade: Watcher::from(unity.path("Level", 0, &["<Grade>k__BackingField"]))
+                .default(),
+            level_difficulty: Watcher::from(unity.path(
+                "Level",
+                0,
+                &["<CurrentMode>k__BackingField"],
+            ))
+            .default(),
             lsd_time: Watcher::from(unity.path(
                 "Level",
                 0,
@@ -149,6 +161,8 @@ impl<'a> Memory<'a> {
         self.level_won.invalidate();
         self.level_ending.invalidate();
         self.level_time.invalidate();
+        self.level_grade.invalidate();
+        self.level_difficulty.invalidate();
         self.lsd_time.invalidate();
         self.kd_spaces_moved.invalidate();
         self.level_is_dice.invalidate();

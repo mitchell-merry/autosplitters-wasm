@@ -165,7 +165,7 @@ impl Levels {
     }
 }
 
-#[derive(Default, PartialEq, Eq)]
+#[derive(Debug, Default, Eq, PartialEq)]
 pub enum LevelType {
     #[default]
     Unknown,
@@ -174,4 +174,52 @@ pub enum LevelType {
     Platformer,
     Mausoleum,
     ChessPiece,
+}
+
+impl LevelType {
+    pub fn is_highest_grade(&self, grade: Grade, difficulty: Mode) -> bool {
+        match self {
+            LevelType::Platformer => grade == Grade::P,
+            LevelType::Boss => match difficulty {
+                Mode::Easy => grade == Grade::BPlus,
+                Mode::Normal => grade == Grade::APlus,
+                Mode::Hard => grade == Grade::S,
+                _ => false,
+            },
+            _ => true,
+        }
+    }
+}
+
+#[derive(CheckedBitPattern, Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(u32)]
+#[allow(dead_code, non_camel_case_types)]
+pub enum Mode {
+    #[default]
+    Unknown = 69,
+    Easy = 0,
+    Normal = 1,
+    Hard = 2,
+}
+
+#[derive(CheckedBitPattern, Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(u32)]
+#[allow(dead_code, non_camel_case_types)]
+pub enum Grade {
+    #[default]
+    Unknown = 69,
+    DMinus = 0,
+    D = 1,
+    DPlus = 2,
+    CMinus = 3,
+    C = 4,
+    CPlus = 5,
+    BMinus = 6,
+    B = 7,
+    BPlus = 8,
+    AMinus = 9,
+    A = 10,
+    APlus = 11,
+    S = 12,
+    P = 13,
 }
