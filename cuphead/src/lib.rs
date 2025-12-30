@@ -298,7 +298,8 @@ async fn tick<'a>(
         } else if let Some((from_scene, target_scenes)) = level.split_on_scene_transition_to() {
             // split if the level transitions out to another specific scene (e.g. tutorial)
             split_log(
-                memory.scene.changed()?
+                level.is_split_enabled(settings)
+                    && memory.scene.changed()?
                     && previous_scene == from_scene
                     && target_scenes.contains(scene.as_str()),
                 &format!("scene change ({} -> {})", from_scene, scene.as_str()),
