@@ -1,5 +1,5 @@
-use crate::enums::Levels;
 use crate::enums::Grade;
+use crate::enums::Levels;
 use crate::enums::Mode;
 use asr::game_engine::unity::scene_manager::SceneManager;
 use asr::string::ArrayWString;
@@ -87,12 +87,8 @@ impl<'a> Memory<'a> {
                 &["<Current>k__BackingField", "<LevelTime>k__BackingField"],
             ))
             .default_given(0f32),
-            level_grade: Watcher::from(unity.path(
-                "Level",
-                0,
-                &["<Grade>k__BackingField"],
-            ))
-            .default(),
+            level_grade: Watcher::from(unity.path("Level", 0, &["<Grade>k__BackingField"]))
+                .default(),
             level_difficulty: Watcher::from(unity.path(
                 "Level",
                 0,
