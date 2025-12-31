@@ -150,66 +150,11 @@ async fn tick<'a>(
 ) -> Result<(), Box<dyn Error>> {
     let memory = &cuphead.memory;
     let measured_state = &mut cuphead.measured_state;
-
-    set_variable(
-        "done loading scene async",
-        &format!("{:?}", memory.done_loading.current()),
-    );
-    set_variable("insta", &format!("{}", memory.insta.current()?));
     let scene = String::from_utf16(memory.scene.current()?.as_slice())?;
-    set_variable("scene name", &scene.to_string());
     let previous_scene = match memory.scene.old() {
         Some(previous_scene) => String::from_utf16(previous_scene.as_slice())?,
         None => String::new(),
     };
-
-    set_variable("in game", &format!("{}", memory.in_game.current()?));
-    set_variable("current level", &format!("{:?}", memory.level.current()?));
-    set_variable("level won", &format!("{}", memory.level_won.current()?));
-    set_variable(
-        "level ending",
-        &format!("{}", memory.level_ending.current()?),
-    );
-    set_variable(
-        "level time (raw)",
-        &format!(
-            "{}",
-            f32::trunc(memory.level_time.current()? * 100.0) / 100.0
-        ),
-    );
-    set_variable(
-        "level time (ind)",
-        &format!("{:.2}", memory.level_time.current()?),
-    );
-    set_variable("lsd time (raw)", &format!("{}", memory.lsd_time.current()?));
-    set_variable(
-        "kd spaces moved",
-        &format!("{}", memory.kd_spaces_moved.current()?),
-    );
-    set_variable(
-        "is dice palace",
-        &format!("{}", memory.level_is_dice.current()?),
-    );
-    set_variable(
-        "is dice palace main",
-        &format!("{}", memory.level_is_dice_main.current()?),
-    );
-    set_variable(
-        "devil bad ending active",
-        &format!("{:?}", memory.devil_bad_ending_active.current()?),
-    );
-    // TODO: delete dis
-    set_variable(
-        "difficulty ticker started counting",
-        &format!("{:?}", memory.difficulty_ticker_started_counting.current()?),
-    );
-    set_variable(
-        "difficulty ticker finished counting",
-        &format!(
-            "{:?}",
-            memory.difficulty_ticker_finished_counting.current()?
-        ),
-    );
 
     if memory.lsd_time.changed()? && memory.lsd_time.current()? != 0f32 {
         measured_state.lsd_time = memory.lsd_time.current()?;
@@ -236,10 +181,6 @@ async fn tick<'a>(
     if !measured_state.was_on_scorecard {
         measured_state.was_on_scorecard = previous_scene == "scene_win" && scene != "scene_win";
     }
-    set_variable(
-        "was on scorecard",
-        &format!("{}", measured_state.was_on_scorecard),
-    );
 
     let time = if measured_state.level_updated_lsd {
         measured_state.lsd_time
@@ -247,16 +188,93 @@ async fn tick<'a>(
         memory.level_time.current()? + measured_state.lsd_time
     };
 
+    // For users to use directly - key matters
     set_variable("Level Time", &format_seconds(time));
+
+    // For run recap component - key matters
+    // Future improvement - make these a setting so we save extra performance?
+    set_variable("scene name", &scene.to_string());
+    set_variable("loading", &format!("{:?}", !memory.done_loading.current()?));
     set_variable(
-        "lsd time better",
-        &format!("{:.2}", measured_state.lsd_time),
+        "difficulty",
+        &format!("{:?}", memory.level_difficulty.current()?),
+    );
+    set_variable("scoring time", &format!("{}", memory.lsd_time.current()?));
+    set_variable("parries", &format!("{}", memory.lsd_parries.current()?));
+    set_variable(
+        "super meter",
+        &format!("{}", memory.lsd_super_meter.current()?),
+    );
+    set_variable("coins", &format!("{}", memory.lsd_coins.current()?));
+    set_variable("hits", &format!("{}", memory.lsd_hits.current()?));
+    set_variable(
+        "use coins instead of super meter",
+        &format!("{}", memory.lsd_use_coins_instead.current()?),
     );
 
-    set_variable(
-        "level_updated_lsd",
-        &format!("{}", measured_state.level_updated_lsd),
-    );
+    // For debugging
+    #[cfg(debug_assertions)]
+    {
+        set_variable("insta", &format!("{}", memory.insta.current()?));
+        set_variable("in game", &format!("{}", memory.in_game.current()?));
+        set_variable("current level", &format!("{:?}", memory.level.current()?));
+        set_variable(
+            "level ending",
+            &format!("{}", memory.level_ending.current()?),
+        );
+        set_variable("level won", &format!("{}", memory.level_won.current()?));
+        set_variable(
+            "level time (raw)",
+            &format!(
+                "{}",
+                f32::trunc(memory.level_time.current()? * 100.0) / 100.0
+            ),
+        );
+        set_variable(
+            "level time (ind)",
+            &format!("{:.2}", memory.level_time.current()?),
+        );
+        set_variable(
+            "kd spaces moved",
+            &format!("{}", memory.kd_spaces_moved.current()?),
+        );
+        set_variable(
+            "is dice palace",
+            &format!("{}", memory.level_is_dice.current()?),
+        );
+        set_variable(
+            "is dice palace main",
+            &format!("{}", memory.level_is_dice_main.current()?),
+        );
+        set_variable(
+            "devil bad ending active",
+            &format!("{:?}", memory.devil_bad_ending_active.current()?),
+        );
+        set_variable(
+            "difficulty ticker started counting",
+            &format!("{:?}", memory.difficulty_ticker_started_counting.current()?),
+        );
+        set_variable(
+            "difficulty ticker finished counting",
+            &format!(
+                "{:?}",
+                memory.difficulty_ticker_finished_counting.current()?
+            ),
+        );
+        set_variable(
+            "was on scorecard",
+            &format!("{}", measured_state.was_on_scorecard),
+        );
+        set_variable(
+            "lsd time better",
+            &format!("{:.2}", measured_state.lsd_time),
+        );
+
+        set_variable(
+            "level_updated_lsd",
+            &format!("{}", measured_state.level_updated_lsd),
+        );
+    }
 
     if state() == TimerState::NotRunning {
         measured_state.star_skip_counter = 0;
