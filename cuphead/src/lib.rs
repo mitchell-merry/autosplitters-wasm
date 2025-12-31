@@ -195,10 +195,8 @@ async fn tick<'a>(
     // For users to use directly - key matters
     set_variable("Level Time", &format_seconds(time));
 
-    if state() == TimerState::Running {
-        if scene == SCENE_SCOREBOARD {
-            monitor_star_skip(memory, measured_state)?;
-        }
+    if state() == TimerState::Running && scene == SCENE_SCOREBOARD {
+        monitor_star_skip(memory, measured_state)?;
     }
 
     let counter = if settings.display_star_skip_counter_as_decimal {
