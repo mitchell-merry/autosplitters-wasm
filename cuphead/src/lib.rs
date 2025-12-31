@@ -361,8 +361,8 @@ async fn tick<'a>(
             // split on knockout
             split_log(
                 level.is_split_enabled(settings)
-                    && memory.level_won.old().is_some_and(|w| !w)
                     && memory.level_won.current()?
+                    && memory.level_won.old().is_some_and(|w| !w)
                     && (!settings.split_highest_grade
                         || level.get_type().is_highest_grade(
                             memory.level_grade.current()?,
