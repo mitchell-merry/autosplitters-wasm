@@ -39,6 +39,10 @@ const SCENE_CUTSCENE_DEVIL: &str = "scene_cutscene_devil";
 const SCENE_TITLE_SCREEN: &str = "scene_title";
 const SCENE_SCOREBOARD: &str = "scene_win";
 
+const STAR_SKIP_TIME_FIRST: u64 = 100;
+const STAR_SKIP_TIME_SECOND: u64 = 600;
+const STAR_SKIP_TIME_THIRD: u64 = 1100;
+
 #[derive(Default)]
 struct MeasuredState {
     level_updated_lsd: bool,
@@ -191,6 +195,23 @@ async fn tick<'a>(
     // For users to use directly - key matters
     set_variable("Level Time", &format_seconds(time));
 
+    if state() == TimerState::Running {
+        if scene == SCENE_SCOREBOARD {
+            monitor_star_skip(memory, measured_state)?;
+        }
+    }
+
+    let counter = if settings.display_star_skip_counter_as_decimal {
+        &format!(
+            "{}",
+            f32::trunc((measured_state.star_skip_counter_decimal as f32 / 6.0) * 100.0) / 100.0
+        )
+    } else {
+        &format!("{}", measured_state.star_skip_counter)
+    };
+
+    set_variable("Star Skip Counter", counter);
+
     // For run recap component - key matters
     // Future improvement - make these a setting so we save extra performance?
     set_variable("scene name", &scene.to_string());
@@ -279,6 +300,7 @@ async fn tick<'a>(
     if state() == TimerState::NotRunning {
         measured_state.star_skip_counter = 0;
         measured_state.star_skip_counter_decimal = 0;
+
         if (scene == SCENE_CUTSCENE_INTRO
         && memory.in_game.current()?
         // just started loading
@@ -377,22 +399,6 @@ async fn tick<'a>(
         {
             reset();
         }
-
-        if scene == SCENE_SCOREBOARD {
-            monitor_star_skip(memory, measured_state);
-        }
-    }
-
-    if (settings.display_star_skip_counter_as_decimal) {
-        set_variable(
-            "star skip counter",
-            &format!("{}", measured_state.star_skip_counter_decimal as f32 / 6.0),
-        );
-    } else {
-        set_variable(
-            "star skip counter",
-            &format!("{}", measured_state.star_skip_counter),
-        );
     }
 
     if measured_state.was_on_scorecard && memory.done_loading.changed()? && memory.is_loading()? {
@@ -402,65 +408,59 @@ async fn tick<'a>(
     Ok(())
 }
 
-pub fn monitor_star_skip(
+fn monitor_star_skip(
     memory: &Memory,
     measured_state: &mut MeasuredState,
 ) -> Result<(), Box<dyn Error>> {
-    let difficultyTickerStartedCounting = memory.difficulty_ticker_started_counting.current()?;
-    let difficultyTickerFinishedCounting = memory.difficulty_ticker_finished_counting.current()?;
-    if !difficultyTickerStartedCounting {
+    let difficulty_ticker_started_counting = memory.difficulty_ticker_started_counting.current()?;
+    let difficulty_ticker_finished_counting =
+        memory.difficulty_ticker_finished_counting.current()?;
+    if !difficulty_ticker_started_counting {
         measured_state.difficulty_ticker_start_time = None;
         measured_state.difficulty_ticker_end_time = None;
         return Ok(());
     }
 
-    if measured_state.difficulty_ticker_start_time.is_none() {
-        measured_state.difficulty_ticker_start_time = Some(Instant::now());
-    }
-
-    if !difficultyTickerFinishedCounting || measured_state.difficulty_ticker_end_time.is_some() {
+    let start = match measured_state.difficulty_ticker_start_time {
+        Some(time) => time,
+        None => Instant::now(),
+    };
+    measured_state.difficulty_ticker_start_time = Some(start);
+    if !difficulty_ticker_finished_counting || measured_state.difficulty_ticker_end_time.is_some() {
         return Ok(());
     }
 
-    measured_state.difficulty_ticker_end_time = Some(Instant::now());
-
-    let start = measured_state
-        .difficulty_ticker_start_time
-        .expect("start time must exist");
-
-    let end = measured_state
-        .difficulty_ticker_end_time
-        .expect("end time must exist");
+    let end = Instant::now();
+    measured_state.difficulty_ticker_end_time = Some(end);
 
     let diff: Duration = end.duration_since(start);
-    let ms = diff.as_millis() as u64;
 
     match memory.level_difficulty.current()? {
         Mode::Easy => {
-            if ms < 100 {
+            if diff < Duration::from_millis(STAR_SKIP_TIME_FIRST) {
                 measured_state.star_skip_counter += 1;
                 measured_state.star_skip_counter_decimal += 6;
             }
         }
 
         Mode::Normal => {
-            if ms < 100 {
+            if diff < Duration::from_millis(STAR_SKIP_TIME_FIRST) {
                 measured_state.star_skip_counter += 2;
                 measured_state.star_skip_counter_decimal += 6;
-            } else if ms < 600 {
+            } else if diff < Duration::from_millis(STAR_SKIP_TIME_SECOND) {
                 measured_state.star_skip_counter += 1;
                 measured_state.star_skip_counter_decimal += 3;
             }
         }
 
         Mode::Hard => {
-            if ms < 100 {
+            if diff < Duration::from_millis(STAR_SKIP_TIME_FIRST) {
                 measured_state.star_skip_counter += 3;
                 measured_state.star_skip_counter_decimal += 6;
-            } else if ms < 600 {
+            } else if diff < Duration::from_millis(STAR_SKIP_TIME_SECOND) {
                 measured_state.star_skip_counter += 2;
                 measured_state.star_skip_counter_decimal += 4;
-            } else if ms < 1100 {
+            } else if diff < Duration::from_millis(STAR_SKIP_TIME_THIRD) {
                 measured_state.star_skip_counter += 1;
                 measured_state.star_skip_counter_decimal += 2;
             }
