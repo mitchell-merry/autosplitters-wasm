@@ -85,6 +85,13 @@ pub struct Settings {
     #[default = false]
     pub auto_reset: bool,
 
+    /// Display Star Skip Counter in decimal notation (half = 0.5, full = 1.0)
+    ///
+    /// For expert mode, 1 star = 0.33, 2 stars = 0.66, 3 stars = 1.0.
+    /// If unchecked, each Partial Star Skipped will add 1 to the counter for each star that was skipped.
+    #[default = true]
+    pub display_star_skip_counter_as_decimal: bool,
+
     /// Choose when to split
     #[heading_level = 0]
     _split_level_type: Title,
