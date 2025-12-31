@@ -181,27 +181,41 @@ async fn tick<'a>(
         memory.level_time.current()? + measured_state.lsd_time
     };
 
-    // For users
+    // For users to use directly - key matters
     set_variable("Level Time", &format_seconds(time));
 
-    // For run recap component
+    // For run recap component - key matters
+    // Future improvement - make these a setting so we save extra performance?
     set_variable("scene name", &scene.to_string());
+    set_variable("loading", &format!("{:?}", !memory.done_loading.current()?));
+    set_variable(
+        "difficulty",
+        &format!("{:?}", memory.level_difficulty.current()?),
+    );
+    set_variable("scoring time", &format!("{}", memory.lsd_time.current()?));
+    set_variable("parries", &format!("{}", memory.lsd_parries.current()?));
+    set_variable(
+        "super meter",
+        &format!("{}", memory.lsd_super_meter.current()?),
+    );
+    set_variable("coins", &format!("{}", memory.lsd_coins.current()?));
+    set_variable("hits", &format!("{}", memory.lsd_hits.current()?));
+    set_variable(
+        "use coins instead of super meter",
+        &format!("{}", memory.lsd_use_coins_instead.current()?),
+    );
 
     // For debugging
     #[cfg(debug_assertions)]
     {
-        set_variable(
-            "done loading scene async",
-            &format!("{:?}", memory.done_loading.current()),
-        );
         set_variable("insta", &format!("{}", memory.insta.current()?));
         set_variable("in game", &format!("{}", memory.in_game.current()?));
         set_variable("current level", &format!("{:?}", memory.level.current()?));
-        set_variable("level won", &format!("{}", memory.level_won.current()?));
         set_variable(
             "level ending",
             &format!("{}", memory.level_ending.current()?),
         );
+        set_variable("level won", &format!("{}", memory.level_won.current()?));
         set_variable(
             "level time (raw)",
             &format!(
@@ -213,7 +227,6 @@ async fn tick<'a>(
             "level time (ind)",
             &format!("{:.2}", memory.level_time.current()?),
         );
-        set_variable("lsd time (raw)", &format!("{}", memory.lsd_time.current()?));
         set_variable(
             "kd spaces moved",
             &format!("{}", memory.kd_spaces_moved.current()?),

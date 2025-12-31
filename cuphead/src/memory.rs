@@ -41,6 +41,11 @@ pub struct Memory<'a> {
     pub level_grade: Watcher<'a, Grade>,
     pub level_difficulty: Watcher<'a, Mode>,
     pub lsd_time: Watcher<'a, f32>,
+    pub lsd_hits: Watcher<'a, i32>,
+    pub lsd_parries: Watcher<'a, i32>,
+    pub lsd_super_meter: Watcher<'a, i32>,
+    pub lsd_coins: Watcher<'a, i32>,
+    pub lsd_use_coins_instead: Watcher<'a, bool>,
     pub kd_spaces_moved: Watcher<'a, i32>,
     pub level_is_dice: Watcher<'a, bool>,
     pub level_is_dice_main: Watcher<'a, bool>,
@@ -100,7 +105,40 @@ impl<'a> Memory<'a> {
                 0,
                 &["<ScoringData>k__BackingField", "time"],
             ))
-            .default_given(0f32),
+            .default(),
+            lsd_hits: Watcher::from(unity.path(
+                "Level",
+                0,
+                &["<ScoringData>k__BackingField", "numTimesHit"],
+            ))
+            .default(),
+            lsd_parries: Watcher::from(unity.path(
+                "Level",
+                0,
+                &["<ScoringData>k__BackingField", "numParries"],
+            ))
+            .default(),
+            lsd_super_meter: Watcher::from(unity.path(
+                "Level",
+                0,
+                &["<ScoringData>k__BackingField", "superMeterUsed"],
+            ))
+            .default(),
+            lsd_coins: Watcher::from(unity.path(
+                "Level",
+                0,
+                &["<ScoringData>k__BackingField", "coinsCollected"],
+            ))
+            .default(),
+            lsd_use_coins_instead: Watcher::from(unity.path(
+                "Level",
+                0,
+                &[
+                    "<ScoringData>k__BackingField",
+                    "useCoinsInsteadOfSuperMeter",
+                ],
+            ))
+            .default(),
             kd_spaces_moved: Watcher::from(unity.path(
                 "DicePalaceMainLevelGameInfo",
                 0,
@@ -164,6 +202,11 @@ impl<'a> Memory<'a> {
         self.level_grade.invalidate();
         self.level_difficulty.invalidate();
         self.lsd_time.invalidate();
+        self.lsd_parries.invalidate();
+        self.lsd_super_meter.invalidate();
+        self.lsd_coins.invalidate();
+        self.lsd_use_coins_instead.invalidate();
+        self.lsd_hits.invalidate();
         self.kd_spaces_moved.invalidate();
         self.level_is_dice.invalidate();
         self.level_is_dice_main.invalidate();
