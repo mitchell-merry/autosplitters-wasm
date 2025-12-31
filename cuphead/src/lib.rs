@@ -39,9 +39,9 @@ const SCENE_CUTSCENE_DEVIL: &str = "scene_cutscene_devil";
 const SCENE_TITLE_SCREEN: &str = "scene_title";
 const SCENE_SCOREBOARD: &str = "scene_win";
 
-const STAR_SKIP_TIME_FIRST: u64 = 100;
-const STAR_SKIP_TIME_SECOND: u64 = 600;
-const STAR_SKIP_TIME_THIRD: u64 = 1100;
+const STAR_SKIP_TIME_FIRST: Duration = Duration::from_millis(100);
+const STAR_SKIP_TIME_SECOND: Duration = Duration::from_millis(600);
+const STAR_SKIP_TIME_THIRD: Duration = Duration::from_millis(1100);
 
 #[derive(Default)]
 struct MeasuredState {
@@ -435,30 +435,30 @@ fn monitor_star_skip(
 
     match memory.level_difficulty.current()? {
         Mode::Easy => {
-            if diff < Duration::from_millis(STAR_SKIP_TIME_FIRST) {
+            if diff < STAR_SKIP_TIME_FIRST {
                 measured_state.star_skip_counter += 1;
                 measured_state.star_skip_counter_decimal += 6;
             }
         }
 
         Mode::Normal => {
-            if diff < Duration::from_millis(STAR_SKIP_TIME_FIRST) {
+            if diff < STAR_SKIP_TIME_FIRST {
                 measured_state.star_skip_counter += 2;
                 measured_state.star_skip_counter_decimal += 6;
-            } else if diff < Duration::from_millis(STAR_SKIP_TIME_SECOND) {
+            } else if diff < STAR_SKIP_TIME_SECOND {
                 measured_state.star_skip_counter += 1;
                 measured_state.star_skip_counter_decimal += 3;
             }
         }
 
         Mode::Hard => {
-            if diff < Duration::from_millis(STAR_SKIP_TIME_FIRST) {
+            if diff < STAR_SKIP_TIME_FIRST {
                 measured_state.star_skip_counter += 3;
                 measured_state.star_skip_counter_decimal += 6;
-            } else if diff < Duration::from_millis(STAR_SKIP_TIME_SECOND) {
+            } else if diff < STAR_SKIP_TIME_SECOND {
                 measured_state.star_skip_counter += 2;
                 measured_state.star_skip_counter_decimal += 4;
-            } else if diff < Duration::from_millis(STAR_SKIP_TIME_THIRD) {
+            } else if diff < STAR_SKIP_TIME_THIRD {
                 measured_state.star_skip_counter += 1;
                 measured_state.star_skip_counter_decimal += 2;
             }
