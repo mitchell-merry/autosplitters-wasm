@@ -199,13 +199,14 @@ async fn tick<'a>(
         monitor_star_skip(memory, measured_state)?;
     }
 
+    let counter_raw = &format!("{}", measured_state.star_skip_counter);
     let counter = if settings.display_star_skip_counter_as_decimal {
         &format!(
             "{}",
             f32::trunc((measured_state.star_skip_counter_decimal as f32 / 6.0) * 100.0) / 100.0
         )
     } else {
-        &format!("{}", measured_state.star_skip_counter)
+        counter_raw
     };
 
     set_variable("Star Skip Counter", counter);
@@ -230,6 +231,7 @@ async fn tick<'a>(
         "use coins instead of super meter",
         &format!("{}", memory.lsd_use_coins_instead.current()?),
     );
+    set_variable("star skip counter raw", counter_raw);
 
     // For debugging
     #[cfg(debug_assertions)]
