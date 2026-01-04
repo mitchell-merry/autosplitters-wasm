@@ -192,11 +192,12 @@ async fn tick<'a>(
         memory.level_time.current()? + measured_state.lsd_time
     };
 
-    // For users to use directly - key matters
-    set_variable("Level Time", &format_seconds(time));
-
+    let mut is_run_in_progress: bool = false;
     if state() == TimerState::Running && scene == SCENE_SCOREBOARD {
         monitor_star_skip(memory, measured_state)?;
+    }
+    if state() != TimerState::NotRunning && state() != TimerState::Unknown {
+        is_run_in_progress = true;
     }
 
     let counter_raw = &format!("{}", measured_state.star_skip_counter);
@@ -209,6 +210,8 @@ async fn tick<'a>(
         counter_raw
     };
 
+    // For users to use directly - key matters
+    set_variable("Level Time", &format_seconds(time));
     set_variable("Star Skip Counter", counter);
 
     // For run recap component - key matters
@@ -232,6 +235,7 @@ async fn tick<'a>(
         &format!("{}", memory.lsd_use_coins_instead.current()?),
     );
     set_variable("star skip counter raw", counter_raw);
+    set_variable("is run in progress", &format!("{}", is_run_in_progress));
 
     // For debugging
     #[cfg(debug_assertions)]
@@ -311,6 +315,7 @@ async fn tick<'a>(
                 && memory.level_time.current()? > 0f32
                 && (!memory.level_is_dice.current()? || memory.lsd_time.current()? == 0f32))
         {
+            set_variable("is run in progress", &format!("{}", true));
             pause_game_time();
             start();
         }
