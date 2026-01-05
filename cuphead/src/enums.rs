@@ -99,6 +99,45 @@ impl Levels {
         }
     }
 
+    pub fn split_on_won_scene_transition_to(&self) -> Option<(&str, HashSet<&str>)> {
+        match self {
+            Levels::Mausoleum => Some((
+                "scene_level_mausoleum",
+                HashSet::from([
+                    "scene_map_world_1",
+                    "scene_map_world_2",
+                    "scene_map_world_3",
+                    "scene_map_world_DLC",
+                ]),
+            )),
+            Levels::Graveyard => Some((
+                "scene_level_graveyard",
+                HashSet::from(["scene_map_world_DLC"]),
+            )),
+            Levels::ChessPawn => Some((
+                "scene_level_chess_pawn",
+                HashSet::from(["scene_level_chess_castle", "scene_level_chess_knight"]),
+            )),
+            Levels::ChessKnight => Some((
+                "scene_level_chess_knight",
+                HashSet::from(["scene_level_chess_castle", "scene_level_chess_bishop"]),
+            )),
+            Levels::ChessBishop => Some((
+                "scene_level_chess_bishop",
+                HashSet::from(["scene_level_chess_castle", "scene_level_chess_rook"]),
+            )),
+            Levels::ChessRook => Some((
+                "scene_level_chess_rook",
+                HashSet::from(["scene_level_chess_castle", "scene_level_chess_queen"]),
+            )),
+            Levels::ChessQueen => Some((
+                "scene_level_chess_queen",
+                HashSet::from(["scene_level_chess_castle"]),
+            )),
+            _ => None,
+        }
+    }
+
     pub fn get_type(&self) -> LevelType {
         match self {
             Levels::Tutorial | Levels::ChaliceTutorial => LevelType::Tutorial,

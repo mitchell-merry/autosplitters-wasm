@@ -37,18 +37,9 @@ impl LevelCompleteSetting {
             // chess pieces: no scorecard
             // angel/devil: no scorecard
             LevelCompleteSetting::AfterScorecard => {
-                level == Levels::Devil
-                    || level == Levels::Saltbaker
-                    || level == Levels::Graveyard
-                    || level == Levels::Mausoleum
-                    || level.get_type() == LevelType::ChessPiece
+                level == Levels::Devil || level == Levels::Saltbaker
             }
-            LevelCompleteSetting::AfterScorecardIncludingSaltbaker => {
-                level == Levels::Devil
-                    || level == Levels::Graveyard
-                    || level == Levels::Mausoleum
-                    || level.get_type() == LevelType::ChessPiece
-            }
+            LevelCompleteSetting::AfterScorecardIncludingSaltbaker => level == Levels::Devil,
         }
     }
 }
