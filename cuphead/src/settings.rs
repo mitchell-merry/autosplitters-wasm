@@ -1,4 +1,4 @@
-use crate::enums::{LevelType, Levels};
+use crate::enums::Levels;
 use asr::settings::gui::Title;
 use asr::settings::Gui;
 

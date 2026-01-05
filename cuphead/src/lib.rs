@@ -244,10 +244,10 @@ async fn tick<'a>(
     // For debugging
     #[cfg(debug_assertions)]
     {
-        set_variable("previous scene", &format!("{}", previous_scene));
+        set_variable("previous scene", &previous_scene.to_string());
         set_variable(
             "last seen scene",
-            &format!("{}", measured_state.last_seen_scene),
+            &format!("{}", &measured_state.last_seen_scene.to_string()),
         );
         set_variable("insta", &format!("{}", memory.insta.current()?));
         set_variable("in game", &format!("{}", memory.in_game.current()?));
