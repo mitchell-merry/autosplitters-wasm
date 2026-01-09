@@ -48,7 +48,6 @@ struct MeasuredState {
     last_seen_scene: String,
     level_updated_lsd: bool,
     lsd_time: f32,
-    was_on_scorecard: bool,
     difficulty_ticker_start_time: Option<Instant>,
     difficulty_ticker_end_time: Option<Instant>,
     star_skip_counter: i32,
@@ -186,10 +185,6 @@ async fn tick<'a>(
         measured_state.level_updated_lsd = false;
     }
 
-    if !measured_state.was_on_scorecard {
-        measured_state.was_on_scorecard = previous_scene == "scene_win" && scene != "scene_win";
-    }
-
     let time = if measured_state.level_updated_lsd {
         measured_state.lsd_time
     } else {
@@ -296,10 +291,6 @@ async fn tick<'a>(
             ),
         );
         set_variable(
-            "was on scorecard",
-            &format!("{}", measured_state.was_on_scorecard),
-        );
-        set_variable(
             "lsd time better",
             &format!("{:.2}", measured_state.lsd_time),
         );
@@ -401,7 +392,11 @@ async fn tick<'a>(
                         && memory.is_loading()?
                         && measured_state.last_seen_scene == from_scene
                         && target_scenes.contains(scene.as_str()),
-                    &format!("scene change ({} -> {})", from_scene, scene.as_str()),
+                    &format!(
+                        "scene change on fadeout ({} -> {})",
+                        from_scene,
+                        scene.as_str()
+                    ),
                 )
             } else if let Some((from_scene, target_scenes)) =
                 level.split_on_won_scene_transition_to()
@@ -414,14 +409,18 @@ async fn tick<'a>(
                         && memory.level_won.current()?
                         && measured_state.last_seen_scene == from_scene
                         && target_scenes.contains(scene.as_str()),
-                    &format!("scene change ({} -> {})", from_scene, scene.as_str()),
+                    &format!(
+                        "scene change on fadeout for a won level ({} -> {})",
+                        from_scene,
+                        scene.as_str()
+                    ),
                 )
             } else {
                 split_log(
                     level.is_split_enabled(settings)
-                        && measured_state.was_on_scorecard
                         && memory.done_loading.changed()?
                         && memory.is_loading()?
+                        && measured_state.last_seen_scene == "scene_win"
                         && (!settings.split_highest_grade
                             || level.get_type().is_highest_grade(
                                 memory.level_grade.current()?,
@@ -441,10 +440,6 @@ async fn tick<'a>(
         {
             reset();
         }
-    }
-
-    if measured_state.was_on_scorecard && memory.done_loading.changed()? && memory.is_loading()? {
-        measured_state.was_on_scorecard = false;
     }
 
     Ok(())

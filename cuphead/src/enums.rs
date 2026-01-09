@@ -1,6 +1,40 @@
 use crate::settings::{ChessPieceSetting, Settings};
 use bytemuck::CheckedBitPattern;
+use once_cell::sync::Lazy;
 use std::collections::HashSet;
+
+static TUTORIAL_TARGETS: Lazy<HashSet<&'static str>> =
+    Lazy::new(|| HashSet::from(["scene_level_house_elder_kettle", "scene_map_world_1"]));
+
+static CHALICE_TUTORIAL_TARGETS: Lazy<HashSet<&'static str>> =
+    Lazy::new(|| HashSet::from(["scene_map_world_DLC"]));
+
+static MAUSOLEUM_TARGETS: Lazy<HashSet<&'static str>> = Lazy::new(|| {
+    HashSet::from([
+        "scene_map_world_1",
+        "scene_map_world_2",
+        "scene_map_world_3",
+        "scene_map_world_DLC",
+    ])
+});
+
+static GRAVEYARD_TARGETS: Lazy<HashSet<&'static str>> =
+    Lazy::new(|| HashSet::from(["scene_map_world_DLC"]));
+
+static CHESS_PAWN_TARGETS: Lazy<HashSet<&'static str>> =
+    Lazy::new(|| HashSet::from(["scene_level_chess_castle", "scene_level_chess_knight"]));
+
+static CHESS_KNIGHT_TARGETS: Lazy<HashSet<&'static str>> =
+    Lazy::new(|| HashSet::from(["scene_level_chess_castle", "scene_level_chess_bishop"]));
+
+static CHESS_BISHOP_TARGETS: Lazy<HashSet<&'static str>> =
+    Lazy::new(|| HashSet::from(["scene_level_chess_castle", "scene_level_chess_rook"]));
+
+static CHESS_ROOK_TARGETS: Lazy<HashSet<&'static str>> =
+    Lazy::new(|| HashSet::from(["scene_level_chess_castle", "scene_level_chess_queen"]));
+
+static CHESS_QUEEN_TARGETS: Lazy<HashSet<&'static str>> =
+    Lazy::new(|| HashSet::from(["scene_level_chess_castle"]));
 
 // these names come from code directly
 #[derive(CheckedBitPattern, Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -85,55 +119,27 @@ pub enum Levels {
 }
 
 impl Levels {
-    pub fn split_on_scene_transition_to(&self) -> Option<(&str, HashSet<&str>)> {
+    pub fn split_on_scene_transition_to(&self) -> Option<(&str, &'static HashSet<&'static str>)> {
         match self {
-            Levels::Tutorial => Some((
-                "scene_level_tutorial",
-                HashSet::from(["scene_level_house_elder_kettle", "scene_map_world_1"]),
-            )),
-            Levels::ChaliceTutorial => Some((
-                "scene_level_chalice_tutorial",
-                HashSet::from(["scene_map_world_DLC"]),
-            )),
+            Levels::Tutorial => Some(("scene_level_tutorial", &TUTORIAL_TARGETS)),
+            Levels::ChaliceTutorial => {
+                Some(("scene_level_chalice_tutorial", &CHALICE_TUTORIAL_TARGETS))
+            }
             _ => None,
         }
     }
 
-    pub fn split_on_won_scene_transition_to(&self) -> Option<(&str, HashSet<&str>)> {
+    pub fn split_on_won_scene_transition_to(
+        &self,
+    ) -> Option<(&'static str, &'static HashSet<&'static str>)> {
         match self {
-            Levels::Mausoleum => Some((
-                "scene_level_mausoleum",
-                HashSet::from([
-                    "scene_map_world_1",
-                    "scene_map_world_2",
-                    "scene_map_world_3",
-                    "scene_map_world_DLC",
-                ]),
-            )),
-            Levels::Graveyard => Some((
-                "scene_level_graveyard",
-                HashSet::from(["scene_map_world_DLC"]),
-            )),
-            Levels::ChessPawn => Some((
-                "scene_level_chess_pawn",
-                HashSet::from(["scene_level_chess_castle", "scene_level_chess_knight"]),
-            )),
-            Levels::ChessKnight => Some((
-                "scene_level_chess_knight",
-                HashSet::from(["scene_level_chess_castle", "scene_level_chess_bishop"]),
-            )),
-            Levels::ChessBishop => Some((
-                "scene_level_chess_bishop",
-                HashSet::from(["scene_level_chess_castle", "scene_level_chess_rook"]),
-            )),
-            Levels::ChessRook => Some((
-                "scene_level_chess_rook",
-                HashSet::from(["scene_level_chess_castle", "scene_level_chess_queen"]),
-            )),
-            Levels::ChessQueen => Some((
-                "scene_level_chess_queen",
-                HashSet::from(["scene_level_chess_castle"]),
-            )),
+            Levels::Mausoleum => Some(("scene_level_mausoleum", &MAUSOLEUM_TARGETS)),
+            Levels::Graveyard => Some(("scene_level_graveyard", &GRAVEYARD_TARGETS)),
+            Levels::ChessPawn => Some(("scene_level_chess_pawn", &CHESS_PAWN_TARGETS)),
+            Levels::ChessKnight => Some(("scene_level_chess_knight", &CHESS_KNIGHT_TARGETS)),
+            Levels::ChessBishop => Some(("scene_level_chess_bishop", &CHESS_BISHOP_TARGETS)),
+            Levels::ChessRook => Some(("scene_level_chess_rook", &CHESS_ROOK_TARGETS)),
+            Levels::ChessQueen => Some(("scene_level_chess_queen", &CHESS_QUEEN_TARGETS)),
             _ => None,
         }
     }
