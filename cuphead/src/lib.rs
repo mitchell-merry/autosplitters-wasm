@@ -45,9 +45,9 @@ const STAR_SKIP_TIME_THIRD: Duration = Duration::from_millis(1100);
 
 #[derive(Default)]
 struct MeasuredState {
+    last_seen_scene: String,
     level_updated_lsd: bool,
     lsd_time: f32,
-    was_on_scorecard: bool,
     difficulty_ticker_start_time: Option<Instant>,
     difficulty_ticker_end_time: Option<Instant>,
     star_skip_counter: i32,
@@ -159,6 +159,9 @@ async fn tick<'a>(
         Some(previous_scene) => String::from_utf16(previous_scene.as_slice())?,
         None => String::new(),
     };
+    if memory.scene.changed()? {
+        measured_state.last_seen_scene = previous_scene.clone();
+    };
 
     if memory.lsd_time.changed()? && memory.lsd_time.current()? != 0f32 {
         measured_state.lsd_time = memory.lsd_time.current()?;
@@ -180,10 +183,6 @@ async fn tick<'a>(
 
     if memory.level.changed()? {
         measured_state.level_updated_lsd = false;
-    }
-
-    if !measured_state.was_on_scorecard {
-        measured_state.was_on_scorecard = previous_scene == "scene_win" && scene != "scene_win";
     }
 
     let time = if measured_state.level_updated_lsd {
@@ -240,6 +239,11 @@ async fn tick<'a>(
     // For debugging
     #[cfg(debug_assertions)]
     {
+        set_variable("previous scene", &previous_scene.to_string());
+        set_variable(
+            "last seen scene",
+            &measured_state.last_seen_scene.to_string(),
+        );
         set_variable("insta", &format!("{}", memory.insta.current()?));
         set_variable("in game", &format!("{}", memory.in_game.current()?));
         set_variable("current level", &format!("{:?}", memory.level.current()?));
@@ -285,10 +289,6 @@ async fn tick<'a>(
                 "{:?}",
                 memory.difficulty_ticker_finished_counting.current()?
             ),
-        );
-        set_variable(
-            "was on scorecard",
-            &format!("{}", measured_state.was_on_scorecard),
         );
         set_variable(
             "lsd time better",
@@ -351,48 +351,84 @@ async fn tick<'a>(
                     && memory.devil_bad_ending_active.current()?,
                 "accepted devil deal",
             )
-        } else if let Some((from_scene, target_scenes)) = level.split_on_scene_transition_to() {
-            // split if the level transitions out to another specific scene (e.g. tutorial)
-            split_log(
-                level.is_split_enabled(settings)
-                    && memory.scene.changed()?
-                    && previous_scene == from_scene
-                    && target_scenes.contains(scene.as_str()),
-                &format!("scene change ({} -> {})", from_scene, scene.as_str()),
-            )
         } else if settings
             .split_level_complete
             .should_split_on_knockout(level)
             || settings.individual_level_mode
         {
-            // split on knockout
-            split_log(
-                level.is_split_enabled(settings)
-                    && memory.level_won.current()?
-                    && memory.level_won.old().is_some_and(|w| !w)
-                    && (!settings.split_highest_grade
-                        || level.get_type().is_highest_grade(
-                            memory.level_grade.current()?,
-                            memory.level_difficulty.current()?,
-                        )),
-                &format!("knockout ({:?})", level),
-            )
+            // split on knockout setting
+            if let Some((from_scene, target_scenes)) = level.split_on_scene_transition_to() {
+                // split if the level transitions out to another specific scene (e.g. tutorial)
+                split_log(
+                    level.is_split_enabled(settings)
+                        && memory.scene.changed()?
+                        && previous_scene == from_scene
+                        && target_scenes.contains(scene.as_str()),
+                    &format!("scene change ({} -> {})", from_scene, scene.as_str()),
+                )
+            } else {
+                // split on boss knockout
+                split_log(
+                    level.is_split_enabled(settings)
+                        && memory.level_won.current()?
+                        && memory.level_won.old().is_some_and(|w| !w)
+                        && (!settings.split_highest_grade
+                            || level.get_type().is_highest_grade(
+                                memory.level_grade.current()?,
+                                memory.level_difficulty.current()?,
+                            )),
+                    &format!("knockout ({:?})", level),
+                )
+            }
         } else {
             // split after scoreboard
             // split when we start loading, this gives cleaner splits (segment timer is at 0.00 in
-            //   the loading screen)
-            split_log(
-                level.is_split_enabled(settings)
-                    && measured_state.was_on_scorecard
-                    && memory.done_loading.changed()?
-                    && memory.is_loading()?
-                    && (!settings.split_highest_grade
-                        || level.get_type().is_highest_grade(
-                            memory.level_grade.current()?,
-                            memory.level_difficulty.current()?,
-                        )),
-                &format!("after scoreboard ({:?})", level),
-            )
+            // the loading screen)
+            if let Some((from_scene, target_scenes)) = level.split_on_scene_transition_to() {
+                // split if the level transitions out to another specific scene (e.g. tutorial)
+                split_log(
+                    level.is_split_enabled(settings)
+                        && memory.done_loading.changed()?
+                        && memory.is_loading()?
+                        && measured_state.last_seen_scene == from_scene
+                        && target_scenes.contains(scene.as_str()),
+                    &format!(
+                        "scene change on fadeout ({} -> {})",
+                        from_scene,
+                        scene.as_str()
+                    ),
+                )
+            } else if let Some((from_scene, target_scenes)) =
+                level.split_on_won_scene_transition_to()
+            {
+                // similar level transition setting, but for levels that only need splitting if the level has been won (and not if exiting to map early)
+                split_log(
+                    level.is_split_enabled(settings)
+                        && memory.done_loading.changed()?
+                        && memory.is_loading()?
+                        && memory.level_won.current()?
+                        && measured_state.last_seen_scene == from_scene
+                        && target_scenes.contains(scene.as_str()),
+                    &format!(
+                        "scene change on fadeout for a won level ({} -> {})",
+                        from_scene,
+                        scene.as_str()
+                    ),
+                )
+            } else {
+                split_log(
+                    level.is_split_enabled(settings)
+                        && memory.done_loading.changed()?
+                        && memory.is_loading()?
+                        && measured_state.last_seen_scene == "scene_win"
+                        && (!settings.split_highest_grade
+                            || level.get_type().is_highest_grade(
+                                memory.level_grade.current()?,
+                                memory.level_difficulty.current()?,
+                            )),
+                    &format!("after scoreboard ({:?})", level),
+                )
+            }
         };
 
         if should_split {
@@ -404,10 +440,6 @@ async fn tick<'a>(
         {
             reset();
         }
-    }
-
-    if measured_state.was_on_scorecard && memory.done_loading.changed()? && memory.is_loading()? {
-        measured_state.was_on_scorecard = false;
     }
 
     Ok(())
