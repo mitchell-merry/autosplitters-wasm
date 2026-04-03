@@ -72,7 +72,9 @@ pub enum Scene {
     #[strum(serialize = "scene_level_chess_queen")]
     LevelChessQueen,
 
-    #[strum(default, to_string = "unknown scene ({0})")]
+    // NOTE: the run recap component depends on this just being the raw string name, even
+    // if it's not a scene we've seen (lol) before
+    #[strum(default, to_string = "{0}")]
     Unknown(String),
 
     #[default]

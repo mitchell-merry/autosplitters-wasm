@@ -151,7 +151,7 @@ async fn tick<'a>(
     let memory = &cuphead.memory;
     let measured_state = &mut cuphead.measured_state;
     let scene = memory.scene.current()?;
-    let previous_scene = memory.scene.old().unwrap_or(Scene::Invalid);
+    let previous_scene = memory.scene.old().unwrap_or_default();
 
     if memory.scene.changed()? {
         measured_state.last_seen_scene = previous_scene.clone();
