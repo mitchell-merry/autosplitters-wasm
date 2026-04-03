@@ -73,7 +73,7 @@ impl<'a> Memory<'a> {
                 0,
                 &["<SceneName>k__BackingField", offsets.string_contents],
             )))
-            .default_given(Scene::Unknown),
+            .default_given(Scene::Unknown(String::from("error reading scene"))),
 
             in_game: Watcher::from(unity.path("PlayerData", 0, &["inGame"])).default_given(false),
             level: Watcher::from(unity.path("Level", 0, &["<PreviousLevel>k__BackingField"]))

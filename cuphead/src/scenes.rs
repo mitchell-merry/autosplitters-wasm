@@ -7,7 +7,7 @@ use std::error::Error;
 use std::str::FromStr;
 use strum::{Display, EnumString};
 
-#[derive(EnumString, Copy, Clone, Default, Display, PartialEq, Eq, Debug, Hash)]
+#[derive(EnumString, Clone, Display, PartialEq, Eq, Debug, Hash)]
 pub enum Scene {
     #[strum(serialize = "scene_title")]
     TitleScreen,
@@ -72,12 +72,8 @@ pub enum Scene {
     #[strum(serialize = "scene_level_chess_queen")]
     LevelChessQueen,
 
-    #[default]
-    #[strum(to_string = "unknown scene")]
-    // TODO: we don't use the strum(default) attribute here because that requires giving this
-    // String, which means we can't use Copy, which the watcher code currently depends on
-    // perhaps we can refactor that to use Clone only which would work with this
-    Unknown,
+    #[strum(default, to_string = "unknown scene ({0})")]
+    Unknown(String),
 }
 
 static ISLE_ONE_START_FROM: Lazy<HashSet<Scene>> =
