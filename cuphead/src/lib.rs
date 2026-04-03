@@ -299,19 +299,25 @@ async fn tick<'a>(
         measured_state.star_skip_counter = 0;
         measured_state.star_skip_counter_decimal = 0;
 
-        let should_start = if scene == Scene::CutsceneIntro {
-            (memory.in_game.current()?
+        let should_start =
+            // Normal full game
+            (scene == Scene::CutsceneIntro && memory.in_game.current()?
                 // just started loading
-                && !memory.done_loading.current()?
-                && memory.done_loading.old().is_some_and(|l| l))
-                || (settings.individual_level_mode
-                    && memory.level_time.old().is_some_and(|t| t == 0f32)
-                    && memory.level_time.current()? > 0f32
-                    && (!memory.level_is_dice.current()? || memory.lsd_time.current()? == 0f32))
-        // } else if () {
-        } else {
-            false
-        };
+                && memory.is_loading()?
+                && memory.was_loading())
+            // ILs
+            || (settings.individual_level_mode
+                && memory.level_time.old().is_some_and(|t| t == 0f32)
+                && memory.level_time.current()? > 0f32
+                && (!memory.level_is_dice.current()? || memory.lsd_time.current()? == 0f32))
+            // Isle enters + NG+
+            || (settings.start_isle_enter
+                // just finished loading
+                && !memory.is_loading()?
+                && memory.was_loading()
+                && scene
+                    .isle_start_on_scene_transition_from()
+                    .is_some_and(|scenes| scenes.contains(&measured_state.last_seen_scene)));
 
         if should_start {
             set_variable("is run in progress", &format!("{}", true));

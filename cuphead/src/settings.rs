@@ -76,6 +76,11 @@ pub struct Settings {
     #[default = false]
     pub auto_reset: bool,
 
+    /// Start on entering an isle (for NG+ and isle runs)
+    ///
+    /// Starts when you enter an isle from a set of predefined locations.
+    pub start_isle_enter: bool,
+
     /// Display Star Skip Counter in decimal notation (half = 0.5, full = 1.0)
     ///
     /// For expert mode, 1 star = 0.33, 2 stars = 0.66, 3 stars = 1.0.

@@ -218,4 +218,8 @@ impl<'a> Memory<'a> {
     pub fn is_loading(&self) -> Result<bool, Box<dyn Error>> {
         Ok(!self.done_loading.current()?)
     }
+
+    pub fn was_loading(&self) -> bool {
+        !self.done_loading.old().is_some_and(|l| l)
+    }
 }

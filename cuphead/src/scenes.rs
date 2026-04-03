@@ -1,6 +1,8 @@
 use asr::string::ArrayWString;
 use helpers::watchers::unity::UnityPointerPath;
 use helpers::watchers::{ValueGetter, Watcher};
+use once_cell::sync::Lazy;
+use std::collections::HashSet;
 use std::error::Error;
 use std::str::FromStr;
 use strum::{Display, EnumString};
@@ -72,7 +74,35 @@ pub enum Scene {
 
     #[default]
     #[strum(to_string = "unknown scene")]
+    // TODO: we don't use the strum(default) attribute here because that requires giving this
+    // String, which means we can't use Copy, which the watcher code currently depends on
+    // perhaps we can refactor that to use Clone only which would work with this
     Unknown,
+}
+
+static ISLE_ONE_START_FROM: Lazy<HashSet<Scene>> =
+    Lazy::new(|| HashSet::from([Scene::LevelElderKettle, Scene::LevelTutorial]));
+
+static ISLE_TWO_START_FROM: Lazy<HashSet<Scene>> = Lazy::new(|| HashSet::from([Scene::IsleOne]));
+
+static ISLE_THREE_START_FROM: Lazy<HashSet<Scene>> = Lazy::new(|| HashSet::from([Scene::IsleTwo]));
+
+static ISLE_HELL_START_FROM: Lazy<HashSet<Scene>> = Lazy::new(|| HashSet::from([Scene::IsleThree]));
+
+static ISLE_DLC_START_FROM: Lazy<HashSet<Scene>> =
+    Lazy::new(|| HashSet::from([Scene::IsleOne, Scene::IsleTwo, Scene::IsleThree]));
+
+impl Scene {
+    pub fn isle_start_on_scene_transition_from(&self) -> Option<&'static HashSet<Scene>> {
+        match self {
+            Scene::IsleOne => Some(&ISLE_ONE_START_FROM),
+            Scene::IsleTwo => Some(&ISLE_TWO_START_FROM),
+            Scene::IsleThree => Some(&ISLE_THREE_START_FROM),
+            Scene::IsleHell => Some(&ISLE_HELL_START_FROM),
+            Scene::IsleDLC => Some(&ISLE_DLC_START_FROM),
+            _ => None,
+        }
+    }
 }
 
 pub struct SceneGetter<'a> {
