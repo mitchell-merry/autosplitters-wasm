@@ -39,6 +39,7 @@ const STAR_SKIP_TIME_FIRST: Duration = Duration::from_millis(100);
 const STAR_SKIP_TIME_SECOND: Duration = Duration::from_millis(600);
 const STAR_SKIP_TIME_THIRD: Duration = Duration::from_millis(1100);
 
+#[derive(Default)]
 struct MeasuredState {
     last_seen_scene: Scene,
     level_updated_lsd: bool,
@@ -131,15 +132,7 @@ async fn try_load<'a>(process: &'a Process) -> Result<Cuphead<'a>, Box<dyn Error
 
     Ok(Cuphead {
         memory,
-        measured_state: MeasuredState {
-            last_seen_scene: Scene::Unknown(String::from("initial value")),
-            level_updated_lsd: Default::default(),
-            lsd_time: Default::default(),
-            difficulty_ticker_start_time: Default::default(),
-            difficulty_ticker_end_time: Default::default(),
-            star_skip_counter: Default::default(),
-            star_skip_counter_decimal: Default::default(),
-        },
+        measured_state: MeasuredState::default(),
     })
 }
 
@@ -158,10 +151,7 @@ async fn tick<'a>(
     let memory = &cuphead.memory;
     let measured_state = &mut cuphead.measured_state;
     let scene = memory.scene.current()?;
-    let previous_scene = memory
-        .scene
-        .old()
-        .unwrap_or(Scene::Unknown(String::from("empty previous scene")));
+    let previous_scene = memory.scene.old().unwrap_or(Scene::Invalid);
 
     if memory.scene.changed()? {
         measured_state.last_seen_scene = previous_scene.clone();

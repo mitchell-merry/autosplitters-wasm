@@ -7,7 +7,7 @@ use std::error::Error;
 use std::str::FromStr;
 use strum::{Display, EnumString};
 
-#[derive(EnumString, Clone, Display, PartialEq, Eq, Debug, Hash)]
+#[derive(EnumString, Clone, Default, Display, PartialEq, Eq, Debug, Hash)]
 pub enum Scene {
     #[strum(serialize = "scene_title")]
     TitleScreen,
@@ -74,6 +74,10 @@ pub enum Scene {
 
     #[strum(default, to_string = "unknown scene ({0})")]
     Unknown(String),
+
+    #[default]
+    #[strum(to_string = "invalid scene")]
+    Invalid,
 }
 
 static ISLE_ONE_START_FROM: Lazy<HashSet<Scene>> =
