@@ -2,7 +2,7 @@ use crate::error::SimpleError;
 use crate::watchers::{ValueGetter, Watcher};
 use asr::game_engine::unity::mono::{Class, Image, Module, UnityPointer};
 use asr::game_engine::unity::scene_manager::{CppGameObject, Scene, SceneManager};
-use asr::{Address, Process};
+use asr::{print_message, Address, Process};
 use bytemuck::CheckedBitPattern;
 use std::cell::{Cell, RefCell};
 use std::error::Error;
@@ -225,9 +225,13 @@ impl<'a, T: CheckedBitPattern> ValueGetter<T> for MonoBehaviourFieldPath<'a, T> 
                     )
                     .map_err(|_| SimpleError::from("couldnt find transform"))?;
 
-                transform
+                let game_object = transform
                     .get_game_object(self.process, &self.scene_manager)
-                    .map_err(|_| SimpleError::from("couldnt get game_object"))?
+                    .map_err(|_| SimpleError::from("couldnt get game_object"))?;
+
+                print_message(&format!("game_object {:?}", game_object));
+
+                game_object
                     .get_class(self.process, &self.scene_manager, self.component_type_name)
                     .map_err(|_| SimpleError::from("couldnt find component in game object"))?
             }

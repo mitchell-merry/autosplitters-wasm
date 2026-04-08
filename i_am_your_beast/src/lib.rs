@@ -5,7 +5,8 @@ mod settings;
 use crate::memory::Memory;
 use crate::settings::Settings;
 use asr::future::retry;
-use asr::game_engine::unity::mono::{Image, Module};
+use asr::game_engine::unity::mono::Module;
+use asr::game_engine::unity::scene_manager::SceneManager;
 use asr::settings::Gui;
 use asr::timer::set_variable;
 use asr::{future::next_tick, print_message, Process};
@@ -49,38 +50,59 @@ async fn main() {
     }
 }
 
+struct IAmYourBeast<'a> {
+    memory: Memory<'a>,
+    measured_state: MeasuredState,
+}
+
 async fn on_attach(process: &Process, settings: &mut Settings) -> Result<(), Box<dyn Error>> {
-    let (module, image) = helpers::try_load::wait_try_load_millis::<(Module, Image), _, _>(
+    let mut iamyourbeast = helpers::try_load::wait_try_load_millis::<IAmYourBeast, _, _>(
         async || {
+            // print_message("  => loading module");
+            // let module = Module::attach_auto_detect(process)
+            //     .ok_or(SimpleError::from("mono module not found"))?;
+            // print_message("  => module loaded, loading image");
             print_message("  => loading module");
             let module = Module::attach_auto_detect(process)
                 .ok_or(SimpleError::from("mono module not found"))?;
-            print_message("  => module loaded, loading image");
+            let module = Rc::new(module);
+            print_message(&format!(
+                "  => module loaded (detected {:?}, {:?}), loading image",
+                module.get_version(),
+                module.get_pointer_size()
+            ));
+
             let image = module
                 .get_default_image(process)
                 .ok_or(SimpleError::from("default image not found"))?;
+            let unity = UnityImage::new(process, module, image);
+            print_message("  => image loaded, loading scene manager");
 
-            let gm = image.get_class(process, &module, "GameManager");
-            print_message(&format!("  => gm found {}", gm.is_some()));
+            let sm = SceneManager::attach(process)
+                .ok_or(SimpleError::from("failed to attach to asr scene manager"))?;
+            let sm = Rc::new(sm);
+            print_message("  => scene manager loaded, loading pointer paths");
 
-            Ok((module, image))
+            let memory = Memory::new(unity, sm.clone())?;
+            print_message("  => pointer paths loaded");
+
+            Ok(IAmYourBeast {
+                memory,
+                measured_state: MeasuredState::default(),
+            })
         },
         std::time::Duration::from_millis(500),
     )
     .await;
-
-    let unity = UnityImage::new(process, Rc::new(module), image);
-    let mut memory = Memory::new(unity);
-    let mut measured_state = MeasuredState::default();
 
     while process.is_open() {
         settings.update();
 
         next_tick().await;
 
-        memory.invalidate();
+        iamyourbeast.memory.invalidate();
 
-        if let Err(err) = tick(process, &memory, &mut measured_state, settings).await {
+        if let Err(err) = tick(process, &mut iamyourbeast, settings).await {
             print_message(&format!("tick failed: {err}"));
         }
     }
@@ -90,11 +112,17 @@ async fn on_attach(process: &Process, settings: &mut Settings) -> Result<(), Box
 
 async fn tick<'a>(
     _process: &'a Process,
-    memory: &Memory<'a>,
-    _measured_state: &mut MeasuredState,
+    iamyourbeast: &mut IAmYourBeast<'a>,
     _settings: &mut Settings,
 ) -> Result<(), Box<dyn Error>> {
-    set_variable("combat time", &format!("{}", memory.combat_time.current()?));
+    set_variable(
+        "combat time",
+        &format!("{}", iamyourbeast.memory.combat_time.current()?),
+    );
+    set_variable(
+        "ui_level_complete_time",
+        &format!("{:?}", iamyourbeast.memory.ui_level_complete_time.current()),
+    );
 
     Ok(())
 }
