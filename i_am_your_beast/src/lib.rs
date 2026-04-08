@@ -58,10 +58,6 @@ struct IAmYourBeast<'a> {
 async fn on_attach(process: &Process, settings: &mut Settings) -> Result<(), Box<dyn Error>> {
     let mut iamyourbeast = helpers::try_load::wait_try_load_millis::<IAmYourBeast, _, _>(
         async || {
-            // print_message("  => loading module");
-            // let module = Module::attach_auto_detect(process)
-            //     .ok_or(SimpleError::from("mono module not found"))?;
-            // print_message("  => module loaded, loading image");
             print_message("  => loading module");
             let module = Module::attach_auto_detect(process)
                 .ok_or(SimpleError::from("mono module not found"))?;
@@ -122,6 +118,49 @@ async fn tick<'a>(
     set_variable(
         "ui_level_complete_time",
         &format!("{:?}", iamyourbeast.memory.ui_level_complete_time.current()),
+    );
+    set_variable(
+        "level",
+        &format!("{:?}", iamyourbeast.memory.level.current()),
+    );
+    set_variable(
+        "level_state",
+        &format!("{:?}", iamyourbeast.memory.level_state.current()),
+    );
+    set_variable(
+        "tracking",
+        &format!("{:?}", iamyourbeast.memory.tracking.current()),
+    );
+    set_variable(
+        "cutscene_id",
+        &format!("{:?}", iamyourbeast.memory.cutscene_id.current()),
+    );
+    set_variable(
+        "transition_scene",
+        &format!(
+            "{:X?}",
+            String::from_utf16(iamyourbeast.memory.transition_scene.current()?.as_slice())
+        ),
+    );
+    set_variable(
+        "scene_transition_state",
+        &format!("{:?}", iamyourbeast.memory.scene_transition_state.current()),
+    );
+    set_variable(
+        "combat_time",
+        &format!("{:?}", iamyourbeast.memory.combat_time.current()),
+    );
+    set_variable(
+        "regained_combat_time",
+        &format!("{:?}", iamyourbeast.memory.regained_combat_time.current()),
+    );
+    set_variable(
+        "ui_level_complete_time",
+        &format!("{:?}", iamyourbeast.memory.ui_level_complete_time.current()),
+    );
+    set_variable(
+        "timer_started",
+        &format!("{:?}", iamyourbeast.memory.timer_started.current()),
     );
 
     Ok(())
