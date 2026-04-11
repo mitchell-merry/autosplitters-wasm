@@ -124,6 +124,18 @@ impl<'a, T: Copy + PartialEq> Watcher<'a, T> {
             Some(old) => Ok(old != self.current()?),
         }
     }
+
+    pub fn was(&self, value: T) -> bool {
+        self.old.is_some_and(|old| old == value)
+    }
+
+    pub fn is(&self, value: T) -> Result<bool, Box<dyn Error>> {
+        Ok(self.current()? == value)
+    }
+
+    pub fn changed_from_to(&self, from: T, to: T) -> Result<bool, Box<dyn Error>> {
+        Ok(self.was(from) && self.is(to)?)
+    }
 }
 
 impl<'a, T: CheckedBitPattern + Default> Watcher<'a, T> {

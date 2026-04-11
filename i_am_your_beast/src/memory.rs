@@ -1,3 +1,4 @@
+use crate::enums::{LevelState, SceneTransitionState};
 use asr::game_engine::unity::scene_manager::SceneManager;
 use asr::string::ArrayWString;
 use helpers::watchers::unity::{MonoBehaviourFieldPath, StringMatch, UnityImage};
@@ -13,7 +14,7 @@ pub struct Memory<'a> {
     pub level: Watcher<'a, i32>,
 
     /// Level state
-    pub level_state: Watcher<'a, i32>,
+    pub level_state: Watcher<'a, LevelState>,
 
     /// Tracks if player is active. Makes split starts more precise.
     pub tracking: Watcher<'a, bool>,
@@ -24,7 +25,7 @@ pub struct Memory<'a> {
     // Too lazy to make a watcher that caches the active scene or something
     // pub transition_scene: Watcher<'a, u64>,
     pub transition_scene: Watcher<'a, ArrayWString<128>>,
-    pub scene_transition_state: Watcher<'a, i32>,
+    pub scene_transition_state: Watcher<'a, SceneTransitionState>,
 
     // Level timers
     // Note that the following time values will stay whatever they last were while in the level select screen,
@@ -79,7 +80,8 @@ impl<'a> Memory<'a> {
                 "GameManager",
                 0,
                 &["instance", "activeSceneTransition", "destination", "0x14"],
-            )),
+            ))
+            .default(),
             scene_transition_state: Watcher::from(unity.path(
                 "GameManager",
                 0,

@@ -1,15 +1,17 @@
 extern crate helpers;
+mod enums;
 mod memory;
 mod settings;
 
+use crate::enums::SceneTransitionState;
 use crate::memory::Memory;
 use crate::settings::Settings;
 use asr::future::retry;
 use asr::game_engine::unity::mono::Module;
 use asr::game_engine::unity::scene_manager::SceneManager;
 use asr::settings::Gui;
-use asr::timer::set_variable;
-use asr::{future::next_tick, print_message, Process};
+use asr::timer::{set_variable, state, TimerState};
+use asr::{future::next_tick, print_message, timer, Process};
 use helpers::error::SimpleError;
 use helpers::watchers::unity::UnityImage;
 use std::error::Error;
@@ -111,57 +113,72 @@ async fn tick<'a>(
     iamyourbeast: &mut IAmYourBeast<'a>,
     settings: &mut Settings,
 ) -> Result<(), Box<dyn Error>> {
-    set_variable(
-        "combat time",
-        &format!("{}", iamyourbeast.memory.combat_time.current()?),
-    );
+    let memory = &iamyourbeast.memory;
+    let transition_scene = String::from_utf16(memory.transition_scene.current()?.as_slice())?;
+
+    set_variable("combat time", &format!("{}", memory.combat_time.current()?));
     set_variable(
         "ui_level_complete_time",
-        &format!("{:?}", iamyourbeast.memory.ui_level_complete_time.current()),
+        &format!("{:?}", memory.ui_level_complete_time.current()?),
     );
-    set_variable(
-        "level",
-        &format!("{:?}", iamyourbeast.memory.level.current()),
-    );
+    set_variable("level", &format!("{:?}", memory.level.current()?));
     set_variable(
         "level_state",
-        &format!("{:?}", iamyourbeast.memory.level_state.current()),
+        &format!("{:?}", memory.level_state.current()?),
     );
-    set_variable(
-        "tracking",
-        &format!("{:?}", iamyourbeast.memory.tracking.current()),
-    );
+    set_variable("tracking", &format!("{:?}", memory.tracking.current()?));
     set_variable(
         "cutscene_id",
-        &format!("{:?}", iamyourbeast.memory.cutscene_id.current()),
+        &format!("{:?}", memory.cutscene_id.current()?),
     );
-    set_variable(
-        "transition_scene",
-        &format!(
-            "{:X?}",
-            String::from_utf16(iamyourbeast.memory.transition_scene.current()?.as_slice())
-        ),
-    );
+    set_variable("transition_scene", &format!("{}", transition_scene));
     set_variable(
         "scene_transition_state",
-        &format!("{:?}", iamyourbeast.memory.scene_transition_state.current()),
+        &format!("{:?}", memory.scene_transition_state.current()?),
     );
     set_variable(
         "combat_time",
-        &format!("{:?}", iamyourbeast.memory.combat_time.current()),
+        &format!("{:?}", memory.combat_time.current()?),
     );
     set_variable(
         "regained_combat_time",
-        &format!("{:?}", iamyourbeast.memory.regained_combat_time.current()),
+        &format!("{:?}", memory.regained_combat_time.current()?),
     );
     set_variable(
         "ui_level_complete_time",
-        &format!("{:?}", iamyourbeast.memory.ui_level_complete_time.current()),
+        &format!("{:?}", memory.ui_level_complete_time.current()?),
     );
     set_variable(
         "timer_started",
-        &format!("{:?}", iamyourbeast.memory.timer_started.current()),
+        &format!("{:?}", memory.timer_started.current()?),
     );
+
+    if state() == TimerState::NotRunning {
+        let should_start = if settings.use_in_game_time {
+            let igt_just_started = memory.timer_started.changed_from_to(false, true)?;
+
+            igt_just_started
+                && (settings.individual_level_mode
+                    || transition_scene == "Scenes/!___STORY SCENES/#2_Corridor_WabbitSeason")
+        } else {
+            let just_loaded_into_level = memory
+                .scene_transition_state
+                .is(SceneTransitionState::TransitioningIn)?
+                && memory.tracking.changed_from_to(false, true)?;
+
+            just_loaded_into_level
+                && (settings.individual_level_mode
+                    || transition_scene == "Scenes/!___STORY SCENES/#01a_Special_Tutorial")
+        };
+
+        if should_start {
+            timer::start();
+        }
+    }
+
+    // if state() == TimerState::Running {
+    //     if
+    // }
 
     Ok(())
 }
