@@ -1,6 +1,6 @@
 use asr::game_engine::unity::scene_manager::SceneManager;
 use asr::string::ArrayWString;
-use helpers::watchers::unity::{MonoBehaviourFieldPath, UnityImage};
+use helpers::watchers::unity::{MonoBehaviourFieldPath, StringMatch, UnityImage};
 use helpers::watchers::Watcher;
 use std::error::Error;
 use std::rc::Rc;
@@ -102,7 +102,7 @@ impl<'a> Memory<'a> {
                 unity.process,
                 unity.module.clone(),
                 scene_manager.clone(),
-                "#5_Corridor_StartingGun",
+                StringMatch::Any,
                 "[LEVEL DEPENDENCIES]",
                 &[
                     "Level Controller",

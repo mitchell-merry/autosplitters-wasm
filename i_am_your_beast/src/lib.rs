@@ -109,7 +109,7 @@ async fn on_attach(process: &Process, settings: &mut Settings) -> Result<(), Box
 async fn tick<'a>(
     _process: &'a Process,
     iamyourbeast: &mut IAmYourBeast<'a>,
-    _settings: &mut Settings,
+    settings: &mut Settings,
 ) -> Result<(), Box<dyn Error>> {
     set_variable(
         "combat time",
