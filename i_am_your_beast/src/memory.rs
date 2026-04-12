@@ -1,7 +1,9 @@
 use crate::enums::{LevelState, SceneTransitionState};
 use asr::game_engine::unity::scene_manager::SceneManager;
 use asr::string::ArrayWString;
-use helpers::watchers::unity::{MonoBehaviourFieldPath, StringMatch, UnityImage};
+use helpers::watchers::unity::{
+    GameObjectActivePath, MonoBehaviourFieldPath, StringMatch, UnityImage,
+};
 use helpers::watchers::Watcher;
 use std::error::Error;
 use std::rc::Rc;
@@ -38,6 +40,10 @@ pub struct Memory<'a> {
     pub ui_level_complete_time: Watcher<'a, f32>,
     /// Self explanatory. Stays true while in the level complete screen.
     pub timer_started: Watcher<'a, bool>,
+    /// Whether the credits are active
+    pub credits_active: Watcher<'a, bool>,
+    /// The page in the credits we're at
+    pub credits_index: Watcher<'a, u32>,
 }
 
 impl<'a> Memory<'a> {
@@ -124,6 +130,25 @@ impl<'a> Memory<'a> {
                 &["instance", "levelController", "combatTimer", "timerStarted"],
             ))
             .default(),
+            credits_active: Watcher::from(GameObjectActivePath::new(
+                unity.process,
+                scene_manager.clone(),
+                StringMatch::Exact("Start Screen"),
+                "Credits UI",
+                &[],
+            ))
+            .default(),
+            credits_index: Watcher::from(MonoBehaviourFieldPath::init(
+                unity.process,
+                unity.module.clone(),
+                scene_manager.clone(),
+                StringMatch::Exact("Start Screen"),
+                "Credits UI",
+                &[],
+                "UICreditsRoot",
+                &["totalIndex"],
+            )?)
+            .default(),
         })
     }
 
@@ -137,6 +162,7 @@ impl<'a> Memory<'a> {
         self.combat_time.invalidate();
         self.regained_combat_time.invalidate();
         self.ui_level_complete_time.invalidate();
-        self.timer_started.invalidate();
+        self.credits_active.invalidate();
+        self.credits_index.invalidate();
     }
 }

@@ -175,6 +175,14 @@ async fn tick<'a>(
         "level started",
         &format!("{:?}", measured_state.level_started),
     );
+    set_variable(
+        "credits active",
+        &format!("{:?}", memory.credits_active.current()?),
+    );
+    set_variable(
+        "credits index",
+        &format!("{:?}", memory.credits_index.current()?),
+    );
 
     if state() == TimerState::NotRunning {
         measured_state.total_igt = 3600f32;
@@ -286,6 +294,11 @@ async fn tick<'a>(
             if should_split {
                 split();
             }
+        }
+
+        // credits, for 100% runs
+        if memory.credits_active.changed_from_to(true, false)? && memory.credits_index.is(49)? {
+            split();
         }
 
         if settings.individual_level_mode {
