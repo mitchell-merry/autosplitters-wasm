@@ -208,7 +208,6 @@ async fn tick<'a>(
     }
 
     if state() == TimerState::Running {
-        // TODO: credits split
         if settings.use_in_game_time {
             pause_game_time();
 
@@ -265,7 +264,6 @@ async fn tick<'a>(
                 .is(SceneTransitionState::TransitioningIn)?;
 
             let should_pause = match transition_scene.as_str() {
-                // TODO: main menu?
                 SCENE_TUTORIAL_1 | SCENE_TUTORIAL_2 => scene_transitioning,
                 SCENE_LEVEL_SELECT => true,
                 _ => {
