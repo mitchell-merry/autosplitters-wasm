@@ -35,14 +35,14 @@ impl<T: Copy> ValueGetter<T> for T {
 /// read a value from memory), and invalidate it at the end of the tick. During the tick, you can
 /// then observe how that value changed from the previous tick, and act on that behaviour (e.g.
 /// value went from false -> true, I should do something, i.e. start/pause/split the timer)
-pub struct Watcher<'a, T: Copy> {
+pub struct Watcher<'a, T: Clone> {
     source: Box<dyn ValueGetter<T> + 'a>,
     current: OnceCell<T>,
     old: Option<T>,
     default: Option<T>,
 }
 
-impl<'a, T: Copy> Watcher<'a, T> {
+impl<'a, T: Clone> Watcher<'a, T> {
     pub fn new(source: Box<dyn ValueGetter<T> + 'a>) -> Self {
         Self {
             source,
@@ -64,12 +64,12 @@ impl<'a, T: Copy> Watcher<'a, T> {
                 };
 
                 // Only return the error we got if we have no default
-                match self.default {
+                match self.default.clone() {
                     Some(default) => Ok(default),
                     None => Err(err),
                 }
             })
-            .copied()
+            .cloned()
     }
 
     /// Retrieve the previous value for this watcher.
@@ -79,7 +79,7 @@ impl<'a, T: Copy> Watcher<'a, T> {
     ///
     /// This returns `None` if there's no value to retrieve, otherwise returns `Some` if it can.
     pub fn old(&self) -> Option<T> {
-        self.old
+        self.old.clone()
     }
 
     /// Invalidate the watcher. This moves the value of `current` into `old`, and empties the cache
@@ -90,7 +90,7 @@ impl<'a, T: Copy> Watcher<'a, T> {
         // Is this desirable?
         // None of my code depends on this behaviour at the moment, since everything is read on
         // every tick anyway.
-        self.old = self.current.get().copied();
+        self.old = self.current.get().cloned();
         self.current = OnceCell::new();
     }
 
@@ -117,11 +117,11 @@ impl<T: Copy + 'static> Watcher<'_, T> {
     }
 }
 
-impl<'a, T: Copy + PartialEq> Watcher<'a, T> {
+impl<'a, T: Clone + PartialEq> Watcher<'a, T> {
     /// Simply tells you if the value changed. Requires reading the value from current, so this can
     /// return an Err.
     pub fn changed(&self) -> Result<bool, Box<dyn Error>> {
-        match self.old {
+        match self.old.clone() {
             None => Ok(false),
             Some(old) => Ok(old != self.current()?),
         }
