@@ -1,8 +1,7 @@
 use crate::enums::{LevelState, SceneTransitionState};
 use asr::game_engine::unity::scene_manager::SceneManager;
-use asr::string::ArrayWString;
 use helpers_iayb::watchers::unity::{
-    GameObjectActivePath, MonoBehaviourFieldPath, StringMatch, UnityImage,
+    ActiveSceneNameGetter, GameObjectActivePath, MonoBehaviourFieldPath, StringMatch, UnityImage,
 };
 use helpers_iayb::watchers::Watcher;
 use std::error::Error;
@@ -23,10 +22,7 @@ pub struct Memory<'a> {
 
     //#25 Mercy split
     pub cutscene_id: Watcher<'a, i32>,
-    /// Technically a transition destination scene, but works as a current scene
-    // Too lazy to make a watcher that caches the active scene or something
-    // pub transition_scene: Watcher<'a, u64>,
-    pub transition_scene: Watcher<'a, ArrayWString<128>>,
+    pub scene: Watcher<'a, String>,
     pub scene_transition_state: Watcher<'a, SceneTransitionState>,
 
     // Level timers
@@ -63,49 +59,48 @@ impl<'a> Memory<'a> {
                     "levelNumber",
                 ],
             ))
-            .default(),
+            .default_on_fail(),
             level_state: Watcher::from(unity.path(
                 "GameManager",
                 0,
                 &["instance", "levelController", "levelState"],
             ))
-            .default(),
+            .default_on_fail(),
             tracking: Watcher::from(unity.path(
                 "GameManager",
                 0,
                 &["instance", "levelController", "gameplayTracker", "tracking"],
             ))
-            .default(),
+            .default_on_fail(),
             cutscene_id: Watcher::from(unity.path(
                 "GameManager",
                 0,
                 &["instance", "cutsceneInfoStorer", "sequence", "ID"],
             ))
-            .default(),
-            transition_scene: Watcher::from(unity.path(
-                "GameManager",
-                0,
-                &["instance", "activeSceneTransition", "destination", "0x14"],
+            .default_on_fail(),
+            scene: Watcher::from(ActiveSceneNameGetter::new(
+                unity.process,
+                scene_manager.clone(),
             ))
-            .default(),
+            .use_old_on_fail(),
             scene_transition_state: Watcher::from(unity.path(
                 "GameManager",
                 0,
                 &["instance", "activeSceneTransition", "state"],
             ))
-            .default(),
+            .default_on_fail(),
             combat_time: Watcher::from(unity.path(
                 "GameManager",
                 0,
                 &["instance", "levelController", "combatTimer", "timer"],
             ))
-            .default(),
+            .default_on_fail(),
             regained_combat_time: Watcher::from(unity.path(
                 "GameManager",
                 0,
                 &["instance", "levelController", "combatTimer", "regainedTime"],
             ))
-            .default(),
+            .default_on_fail(),
             ui_level_complete_time: Watcher::from(MonoBehaviourFieldPath::init(
                 unity.process,
                 unity.module.clone(),
@@ -123,13 +118,13 @@ impl<'a> Memory<'a> {
                 "UILevelCompleteTimeScoreBar",
                 &["currentTime"],
             )?)
-            .default(),
+            .default_on_fail(),
             timer_started: Watcher::from(unity.path(
                 "GameManager",
                 0,
                 &["instance", "levelController", "combatTimer", "timerStarted"],
             ))
-            .default(),
+            .default_on_fail(),
             credits_active: Watcher::from(GameObjectActivePath::new(
                 unity.process,
                 scene_manager.clone(),
@@ -137,7 +132,7 @@ impl<'a> Memory<'a> {
                 "Credits UI",
                 &[],
             ))
-            .default(),
+            .default_on_fail(),
             credits_index: Watcher::from(MonoBehaviourFieldPath::init(
                 unity.process,
                 unity.module.clone(),
@@ -148,7 +143,7 @@ impl<'a> Memory<'a> {
                 "UICreditsRoot",
                 &["totalIndex"],
             )?)
-            .default(),
+            .default_on_fail(),
         })
     }
 
@@ -157,11 +152,12 @@ impl<'a> Memory<'a> {
         self.level_state.invalidate();
         self.tracking.invalidate();
         self.cutscene_id.invalidate();
-        self.transition_scene.invalidate();
+        self.scene.invalidate();
         self.scene_transition_state.invalidate();
         self.combat_time.invalidate();
         self.regained_combat_time.invalidate();
         self.ui_level_complete_time.invalidate();
+        self.timer_started.invalidate();
         self.credits_active.invalidate();
         self.credits_index.invalidate();
     }

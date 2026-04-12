@@ -61,7 +61,7 @@ name = "asr-derive"
 version = "0.1.0"
 source = "git+https://github.com/mitchell-merry/asr?branch=v3-fixes#5e9cf4e99625609f1a780cddb9b6910c30a1e3b6"
 dependencies = [
- "heck",
+ "heck 0.4.1",
  "proc-macro2",
  "quote",
  "syn",

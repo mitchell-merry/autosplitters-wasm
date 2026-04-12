@@ -22,6 +22,14 @@ impl<T: Copy> ValueGetter<T> for T {
     }
 }
 
+#[derive(Clone, Default)]
+pub enum FailBehaviour<T: Clone> {
+    #[default]
+    Fail,
+    UseOld,
+    Default(T),
+}
+
 /// A Watcher is used for fetching values, and comparing those values against old versions of that
 /// value.
 ///
@@ -35,20 +43,20 @@ impl<T: Copy> ValueGetter<T> for T {
 /// read a value from memory), and invalidate it at the end of the tick. During the tick, you can
 /// then observe how that value changed from the previous tick, and act on that behaviour (e.g.
 /// value went from false -> true, I should do something, i.e. start/pause/split the timer)
-pub struct Watcher<'a, T: Copy> {
+pub struct Watcher<'a, T: Clone> {
     source: Box<dyn ValueGetter<T> + 'a>,
     current: OnceCell<T>,
     old: Option<T>,
-    default: Option<T>,
+    on_fail: FailBehaviour<T>,
 }
 
-impl<'a, T: Copy> Watcher<'a, T> {
+impl<'a, T: Clone> Watcher<'a, T> {
     pub fn new(source: Box<dyn ValueGetter<T> + 'a>) -> Self {
         Self {
             source,
             current: OnceCell::new(),
             old: None,
-            default: None,
+            on_fail: Default::default(),
         }
     }
 
@@ -64,12 +72,16 @@ impl<'a, T: Copy> Watcher<'a, T> {
                 };
 
                 // Only return the error we got if we have no default
-                match self.default {
-                    Some(default) => Ok(default),
-                    None => Err(err),
+                match self.on_fail.clone() {
+                    FailBehaviour::Fail => Err(err),
+                    FailBehaviour::UseOld => match self.old.clone() {
+                        None => Err(err),
+                        Some(value) => Ok(value),
+                    },
+                    FailBehaviour::Default(default) => Ok(default),
                 }
             })
-            .copied()
+            .cloned()
     }
 
     /// Retrieve the previous value for this watcher.
@@ -79,7 +91,7 @@ impl<'a, T: Copy> Watcher<'a, T> {
     ///
     /// This returns `None` if there's no value to retrieve, otherwise returns `Some` if it can.
     pub fn old(&self) -> Option<T> {
-        self.old
+        self.old.clone()
     }
 
     /// Invalidate the watcher. This moves the value of `current` into `old`, and empties the cache
@@ -90,7 +102,7 @@ impl<'a, T: Copy> Watcher<'a, T> {
         // Is this desirable?
         // None of my code depends on this behaviour at the moment, since everything is read on
         // every tick anyway.
-        self.old = self.current.get().copied();
+        self.old = self.current.get().cloned();
         self.current = OnceCell::new();
     }
 
@@ -98,12 +110,21 @@ impl<'a, T: Copy> Watcher<'a, T> {
     /// `current()`.
     ///
     /// This swallows the error from `current()`, but may be desirable over dealing with error cases.
-    pub fn default_given(self, default: T) -> Self {
+    pub fn default_on_fail_to(self, default: T) -> Self {
         Watcher {
             source: self.source,
             current: self.current,
             old: self.old,
-            default: Some(default),
+            on_fail: FailBehaviour::Default(default),
+        }
+    }
+
+    pub fn use_old_on_fail(self) -> Self {
+        Watcher {
+            source: self.source,
+            current: self.current,
+            old: self.old,
+            on_fail: FailBehaviour::UseOld,
         }
     }
 }
@@ -117,18 +138,18 @@ impl<T: Copy + 'static> Watcher<'_, T> {
     }
 }
 
-impl<'a, T: Copy + PartialEq> Watcher<'a, T> {
+impl<'a, T: Clone + PartialEq> Watcher<'a, T> {
     /// Simply tells you if the value changed. Requires reading the value from current, so this can
     /// return an Err.
     pub fn changed(&self) -> Result<bool, Box<dyn Error>> {
-        match self.old {
+        match self.old.clone() {
             None => Ok(false),
             Some(old) => Ok(old != self.current()?),
         }
     }
 
     pub fn was(&self, value: T) -> bool {
-        self.old.is_some_and(|old| old == value)
+        self.old.clone().is_some_and(|old| old == value)
     }
 
     pub fn is(&self, value: T) -> Result<bool, Box<dyn Error>> {
@@ -152,12 +173,12 @@ impl<'a, T: CheckedBitPattern + Default> Watcher<'a, T> {
     /// Use the default value of `T` for the default when `current()` fails to retrieve a new value.
     ///
     /// See `default_given` for more documentation.
-    pub fn default(self) -> Self {
+    pub fn default_on_fail(self) -> Self {
         Watcher {
             source: self.source,
             current: self.current,
             old: self.old,
-            default: Some(T::default()),
+            on_fail: FailBehaviour::Default(T::default()),
         }
     }
 }

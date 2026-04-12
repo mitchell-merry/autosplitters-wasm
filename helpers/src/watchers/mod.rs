@@ -128,7 +128,7 @@ impl<'a, T: Clone + PartialEq> Watcher<'a, T> {
     }
 
     pub fn was(&self, value: T) -> bool {
-        self.old.is_some_and(|old| old == value)
+        self.old.clone().is_some_and(|old| old == value)
     }
 
     pub fn is(&self, value: T) -> Result<bool, Box<dyn Error>> {
