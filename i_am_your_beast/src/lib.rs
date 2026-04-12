@@ -130,8 +130,6 @@ async fn tick<'a>(
 ) -> Result<(), Box<dyn Error>> {
     let memory = &iamyourbeast.memory;
     let measured_state = &mut iamyourbeast.measured_state;
-    let transition_scene = memory.transition_scene.current_string()?;
-    let old_transition_scene = memory.transition_scene.old_string()?;
     let current_ui_time = (memory.ui_level_complete_time.current()? * 100f32).round() / 100f32;
 
     set_variable("combat time", &format!("{}", memory.combat_time.current()?));
@@ -153,7 +151,7 @@ async fn tick<'a>(
         "cutscene_id",
         &format!("{:?}", memory.cutscene_id.current()?),
     );
-    set_variable("transition_scene", &transition_scene);
+    set_variable("scene", &memory.scene.current()?);
     set_variable(
         "scene_transition_state",
         &format!("{:?}", memory.scene_transition_state.current()?),
@@ -190,7 +188,7 @@ async fn tick<'a>(
             let igt_just_started = memory.timer_started.changed_from_to(false, true)?;
 
             igt_just_started
-                && (settings.individual_level_mode || transition_scene == SCENE_WALKOUT)
+                && (settings.individual_level_mode || memory.scene.is(SCENE_WALKOUT)?)
         } else {
             let just_loaded_into_level = memory
                 .scene_transition_state
@@ -198,7 +196,7 @@ async fn tick<'a>(
                 && memory.tracking.changed_from_to(false, true)?;
 
             just_loaded_into_level
-                && (settings.individual_level_mode || transition_scene == SCENE_TUTORIAL_1)
+                && (settings.individual_level_mode || memory.scene.is(SCENE_TUTORIAL_1)?)
         };
 
         if should_start {
@@ -262,7 +260,7 @@ async fn tick<'a>(
                 .scene_transition_state
                 .is(SceneTransitionState::TransitioningIn)?;
 
-            let should_pause = match transition_scene.as_str() {
+            let should_pause = match memory.scene.current()?.as_str() {
                 SCENE_TUTORIAL_1 | SCENE_TUTORIAL_2 => scene_transitioning,
                 SCENE_LEVEL_SELECT => true,
                 _ => {
@@ -278,7 +276,7 @@ async fn tick<'a>(
                 resume_game_time();
             }
 
-            let should_split = match old_transition_scene.as_str() {
+            let should_split = match memory.scene.old().unwrap_or_default().as_str() {
                 SCENE_CUTSCENE => {
                     memory.cutscene_id.current()? == 22 && transition_scene == SCENE_LEVEL_SELECT
                 }
@@ -299,7 +297,7 @@ async fn tick<'a>(
         }
 
         if settings.individual_level_mode {
-            let should_reset = match transition_scene.as_str() {
+            let should_reset = match memory.scene().current()?.as_str() {
                 SCENE_TUTORIAL_2 | SCENE_MERCY => false,
                 _ => memory
                     .scene_transition_state

@@ -1,8 +1,7 @@
 use crate::enums::{LevelState, SceneTransitionState};
 use asr::game_engine::unity::scene_manager::SceneManager;
-use asr::string::ArrayWString;
 use helpers_iayb::watchers::unity::{
-    GameObjectActivePath, MonoBehaviourFieldPath, StringMatch, UnityImage,
+    ActiveSceneNameGetter, GameObjectActivePath, MonoBehaviourFieldPath, StringMatch, UnityImage,
 };
 use helpers_iayb::watchers::Watcher;
 use std::error::Error;
@@ -23,10 +22,7 @@ pub struct Memory<'a> {
 
     //#25 Mercy split
     pub cutscene_id: Watcher<'a, i32>,
-    /// Technically a transition destination scene, but works as a current scene
-    // Too lazy to make a watcher that caches the active scene or something
-    // pub transition_scene: Watcher<'a, u64>,
-    pub transition_scene: Watcher<'a, ArrayWString<128>>,
+    pub scene: Watcher<'a, String>,
     pub scene_transition_state: Watcher<'a, SceneTransitionState>,
 
     // Level timers
@@ -82,12 +78,8 @@ impl<'a> Memory<'a> {
                 &["instance", "cutsceneInfoStorer", "sequence", "ID"],
             ))
             .default(),
-            transition_scene: Watcher::from(unity.path(
-                "GameManager",
-                0,
-                &["instance", "activeSceneTransition", "destination", "0x14"],
-            ))
-            .default(),
+            scene: Watcher::from(ActiveSceneNameGetter::new(unity.process, &scene_manager))
+                .default(),
             scene_transition_state: Watcher::from(unity.path(
                 "GameManager",
                 0,
@@ -157,11 +149,12 @@ impl<'a> Memory<'a> {
         self.level_state.invalidate();
         self.tracking.invalidate();
         self.cutscene_id.invalidate();
-        self.transition_scene.invalidate();
+        self.scene.invalidate();
         self.scene_transition_state.invalidate();
         self.combat_time.invalidate();
         self.regained_combat_time.invalidate();
         self.ui_level_complete_time.invalidate();
+        self.timer_started.invalidate();
         self.credits_active.invalidate();
         self.credits_index.invalidate();
     }
