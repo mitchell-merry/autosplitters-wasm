@@ -1,3 +1,5 @@
+use crate::error::SimpleError;
+use asr::string::{ArrayCString, ArrayWString};
 use bytemuck::CheckedBitPattern;
 use once_cell::unsync::OnceCell;
 use std::error::Error;
@@ -133,6 +135,14 @@ impl<'a, T: Copy + PartialEq> Watcher<'a, T> {
         Ok(self.current()? == value)
     }
 
+    pub fn changed_from(&self, from: T) -> Result<bool, Box<dyn Error>> {
+        Ok(self.was(from) && self.changed()?)
+    }
+
+    pub fn changed_to(&self, to: T) -> Result<bool, Box<dyn Error>> {
+        Ok(self.changed()? && self.is(to)?)
+    }
+
     pub fn changed_from_to(&self, from: T, to: T) -> Result<bool, Box<dyn Error>> {
         Ok(self.was(from) && self.is(to)?)
     }
@@ -148,6 +158,36 @@ impl<'a, T: CheckedBitPattern + Default> Watcher<'a, T> {
             current: self.current,
             old: self.old,
             default: Some(T::default()),
+        }
+    }
+}
+
+impl<'a, const N: usize> Watcher<'a, ArrayCString<N>> {
+    pub fn current_string(&self) -> Result<String, Box<dyn Error>> {
+        let curr = self.current()?;
+        let str = curr.validate_utf8()?.to_owned();
+
+        Ok(str)
+    }
+    pub fn old_string(&self) -> Result<String, Box<dyn Error>> {
+        match self.old {
+            None => Err(SimpleError::from("No old value").into()),
+            Some(cstr) => Ok(cstr.validate_utf8()?.to_owned()),
+        }
+    }
+}
+
+impl<'a, const N: usize> Watcher<'a, ArrayWString<N>> {
+    pub fn current_string(&self) -> Result<String, Box<dyn Error>> {
+        let curr = self.current()?;
+        let str = String::from_utf16(curr.as_slice())?;
+
+        Ok(str)
+    }
+    pub fn old_string(&self) -> Result<String, Box<dyn Error>> {
+        match self.old {
+            None => Err(SimpleError::from("No old value").into()),
+            Some(wstr) => Ok(String::from_utf16(wstr.as_slice())?),
         }
     }
 }

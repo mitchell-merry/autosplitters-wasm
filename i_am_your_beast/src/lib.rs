@@ -3,18 +3,21 @@ mod enums;
 mod memory;
 mod settings;
 
-use crate::enums::SceneTransitionState;
+use crate::enums::{LevelState, SceneTransitionState};
 use crate::memory::Memory;
 use crate::settings::Settings;
 use asr::future::retry;
 use asr::game_engine::unity::mono::Module;
 use asr::game_engine::unity::scene_manager::SceneManager;
 use asr::settings::Gui;
-use asr::timer::{set_variable, state, TimerState};
+use asr::timer::{
+    pause_game_time, reset, resume_game_time, set_game_time, set_variable, split, state, TimerState,
+};
 use asr::{future::next_tick, print_message, timer, Process};
 use helpers::error::SimpleError;
 use helpers::watchers::unity::UnityImage;
 use std::error::Error;
+use std::ops::Deref;
 use std::rc::Rc;
 
 asr::async_main!(stable);
@@ -24,8 +27,17 @@ const PROCESS_NAMES: [&str; 1] = [
     "I Am Your Beast.exe",
 ];
 
+const SCENE_LEVEL_SELECT: &'static str = "Scenes/UI/Menus/LevelSelect";
+const SCENE_CUTSCENE: &'static str = "Scenes/UI/Cutscenes/Cutscene";
+const SCENE_TUTORIAL_1: &'static str = "Scenes/!___STORY SCENES/#01a_Special_Tutorial";
+const SCENE_TUTORIAL_2: &'static str = "#01c_Special_Tutorial";
+const SCENE_WALKOUT: &'static str = "Scenes/!___STORY SCENES/#2_Corridor_WabbitSeason";
+const SCENE_MERCY: &'static str = "Scenes/!___STORY SCENES/#25_Special_Blinded";
+
 #[derive(Default)]
-struct MeasuredState {}
+struct MeasuredState {
+    // lsd_time: f32,
+}
 
 async fn main() {
     std::panic::set_hook(Box::new(|panic_info| {
@@ -114,12 +126,18 @@ async fn tick<'a>(
     settings: &mut Settings,
 ) -> Result<(), Box<dyn Error>> {
     let memory = &iamyourbeast.memory;
-    let transition_scene = String::from_utf16(memory.transition_scene.current()?.as_slice())?;
+    let transition_scene = memory.transition_scene.current_string()?;
+    let old_transition_scene = memory.transition_scene.old_string()?;
+    let current_ui_time = (memory.ui_level_complete_time.current()? * 100f32).round() / 100f32;
 
     set_variable("combat time", &format!("{}", memory.combat_time.current()?));
     set_variable(
         "ui_level_complete_time",
         &format!("{:?}", memory.ui_level_complete_time.current()?),
+    );
+    set_variable(
+        "ui_level_complete_time rounded",
+        &format!("{current_ui_time}"),
     );
     set_variable("level", &format!("{:?}", memory.level.current()?));
     set_variable(
@@ -145,10 +163,6 @@ async fn tick<'a>(
         &format!("{:?}", memory.regained_combat_time.current()?),
     );
     set_variable(
-        "ui_level_complete_time",
-        &format!("{:?}", memory.ui_level_complete_time.current()?),
-    );
-    set_variable(
         "timer_started",
         &format!("{:?}", memory.timer_started.current()?),
     );
@@ -158,8 +172,7 @@ async fn tick<'a>(
             let igt_just_started = memory.timer_started.changed_from_to(false, true)?;
 
             igt_just_started
-                && (settings.individual_level_mode
-                    || transition_scene == "Scenes/!___STORY SCENES/#2_Corridor_WabbitSeason")
+                && (settings.individual_level_mode || transition_scene == SCENE_WALKOUT)
         } else {
             let just_loaded_into_level = memory
                 .scene_transition_state
@@ -167,8 +180,7 @@ async fn tick<'a>(
                 && memory.tracking.changed_from_to(false, true)?;
 
             just_loaded_into_level
-                && (settings.individual_level_mode
-                    || transition_scene == "Scenes/!___STORY SCENES/#01a_Special_Tutorial")
+                && (settings.individual_level_mode || transition_scene == SCENE_TUTORIAL_1)
         };
 
         if should_start {
@@ -176,9 +188,74 @@ async fn tick<'a>(
         }
     }
 
-    // if state() == TimerState::Running {
-    //     if
-    // }
+    if state() == TimerState::Running {
+        // TODO: credits split
+        if settings.use_in_game_time {
+            // TODO support full game
+
+            pause_game_time();
+            set_game_time(asr::time::Duration::seconds_f32(
+                memory.combat_time.current()? - memory.regained_combat_time.current()?,
+            ));
+
+            if memory.ui_level_complete_time.changed_from(0f32)? {
+                if settings.use_in_game_time {
+                    print_message(&format!("current ui time {current_ui_time}"));
+                    set_game_time(asr::time::Duration::seconds_f32(current_ui_time));
+                }
+
+                split();
+            }
+        } else {
+            let scene_transitioning = !memory
+                .scene_transition_state
+                .is(SceneTransitionState::TransitioningIn)?;
+
+            let should_pause = match transition_scene.as_str() {
+                // TODO: main menu?
+                SCENE_TUTORIAL_1 | SCENE_TUTORIAL_2 => scene_transitioning,
+                SCENE_LEVEL_SELECT => true,
+                _ => {
+                    scene_transitioning
+                        || memory.level_state.is(LevelState::Intro)?
+                        || memory.level_state.is(LevelState::Completed)?
+                }
+            };
+
+            if should_pause {
+                pause_game_time();
+            } else {
+                resume_game_time();
+            }
+
+            let should_split = match old_transition_scene.as_str() {
+                SCENE_CUTSCENE => {
+                    memory.cutscene_id.current()? == 22 && transition_scene == SCENE_LEVEL_SELECT
+                }
+                SCENE_TUTORIAL_2 => transition_scene == SCENE_LEVEL_SELECT,
+                _ => memory
+                    .level_state
+                    .changed_from_to(LevelState::Active, LevelState::Completed)?,
+            };
+
+            if should_split {
+                split();
+            }
+        }
+
+        if settings.individual_level_mode {
+            let should_reset = match transition_scene.as_str() {
+                SCENE_TUTORIAL_2 | SCENE_MERCY => false,
+                _ => memory
+                    .scene_transition_state
+                    .changed_to(SceneTransitionState::TransitioningOut)?,
+            };
+
+            if should_reset {
+                reset();
+            }
+        }
+    }
 
     Ok(())
 }
