@@ -36,7 +36,8 @@ const SCENE_MERCY: &'static str = "Scenes/!___STORY SCENES/#25_Special_Blinded";
 
 #[derive(Default)]
 struct MeasuredState {
-    // lsd_time: f32,
+    total_igt: f32,
+    level_started: bool,
 }
 
 async fn main() {
@@ -98,7 +99,10 @@ async fn on_attach(process: &Process, settings: &mut Settings) -> Result<(), Box
 
             Ok(IAmYourBeast {
                 memory,
-                measured_state: MeasuredState::default(),
+                measured_state: MeasuredState {
+                    total_igt: 3600f32,
+                    level_started: Default::default(),
+                },
             })
         },
         std::time::Duration::from_millis(500),
@@ -126,6 +130,7 @@ async fn tick<'a>(
     settings: &mut Settings,
 ) -> Result<(), Box<dyn Error>> {
     let memory = &iamyourbeast.memory;
+    let mut measured_state = &mut iamyourbeast.measured_state;
     let transition_scene = memory.transition_scene.current_string()?;
     let old_transition_scene = memory.transition_scene.old_string()?;
     let current_ui_time = (memory.ui_level_complete_time.current()? * 100f32).round() / 100f32;
@@ -166,8 +171,14 @@ async fn tick<'a>(
         "timer_started",
         &format!("{:?}", memory.timer_started.current()?),
     );
+    set_variable(
+        "level started",
+        &format!("{:?}", measured_state.level_started),
+    );
 
     if state() == TimerState::NotRunning {
+        measured_state.total_igt = 3600f32;
+
         let should_start = if settings.use_in_game_time {
             let igt_just_started = memory.timer_started.changed_from_to(false, true)?;
 
@@ -191,20 +202,54 @@ async fn tick<'a>(
     if state() == TimerState::Running {
         // TODO: credits split
         if settings.use_in_game_time {
-            // TODO support full game
-
             pause_game_time();
-            set_game_time(asr::time::Duration::seconds_f32(
-                memory.combat_time.current()? - memory.regained_combat_time.current()?,
-            ));
 
-            if memory.ui_level_complete_time.changed_from(0f32)? {
-                if settings.use_in_game_time {
-                    print_message(&format!("current ui time {current_ui_time}"));
-                    set_game_time(asr::time::Duration::seconds_f32(current_ui_time));
+            /*
+             * Full game IGT logic
+             * 1. Complete level - on ui level complete, add IGT time and an hour
+             * 2. Failed level - on Failed, add combat time
+             * 3. Exit to level - add combat time
+             * 4. Restart level - add combat time
+             */
+
+            let should_split = memory.ui_level_complete_time.changed_from(0f32)?;
+            if should_split {
+                measured_state.total_igt += current_ui_time;
+                measured_state.level_started = false;
+            }
+
+            if memory.level_state.changed_to(LevelState::Failed)? {
+                measured_state.total_igt += memory.combat_time.current()?;
+                measured_state.level_started = false;
+            }
+
+            if memory
+                .scene_transition_state
+                .changed_from(SceneTransitionState::TransitioningIn)?
+            {
+                if measured_state.level_started {
+                    measured_state.total_igt += memory.combat_time.current()?;
                 }
 
+                measured_state.level_started = false;
+            }
+
+            if memory.combat_time.changed_from(0f32)? {
+                measured_state.level_started = true;
+            }
+
+            let time = if measured_state.level_started && memory.ui_level_complete_time.is(0f32)? {
+                measured_state.total_igt + memory.combat_time.current()?
+                    - memory.regained_combat_time.current()?
+            } else {
+                measured_state.total_igt
+            };
+
+            set_game_time(asr::time::Duration::seconds_f32(time));
+
+            if should_split {
                 split();
+                measured_state.total_igt += 3600f32;
             }
         } else {
             let scene_transitioning = !memory
