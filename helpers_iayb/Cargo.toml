@@ -1,13 +1,16 @@
 [package]
-name = "i_am_your_beast"
+name = "helpers_iayb"
 version = "0.1.0"
 edition = "2021"
+
+[features]
+gba = ["asr/gba"]
+unity = ["asr/unity"]
 
 [dependencies]
 asr = { git = "https://github.com/mitchell-merry/asr", branch = "v3-fixes", features = ["alloc", "derive", "unity"] }
 bytemuck = "1.23.1"
-helpers_iayb = { path = "../helpers_iayb", features = ["unity"] }
 once_cell = "1.19.0"
-
-[lib]
-crate-type = ["cdylib"]
+paste = "1.0.15"
+ron = "0.10.1"
+serde = { version = "1.0.219", features = ["derive"] }

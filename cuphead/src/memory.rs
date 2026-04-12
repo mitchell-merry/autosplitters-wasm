@@ -4,7 +4,9 @@ use crate::enums::Mode;
 use asr::game_engine::unity::scene_manager::SceneManager;
 use asr::string::ArrayWString;
 use asr::{Address64, PointerSize};
-use helpers::watchers::unity::{GameObjectActivePath, MonoBehaviourFieldPath, UnityImage};
+use helpers::watchers::unity::{
+    GameObjectActivePath, MonoBehaviourFieldPath, StringMatch, UnityImage,
+};
 use helpers::watchers::Watcher;
 use std::error::Error;
 use std::rc::Rc;
@@ -160,7 +162,7 @@ impl<'a> Memory<'a> {
             devil_bad_ending_active: Watcher::from(GameObjectActivePath::new(
                 unity.process,
                 scene_manager.clone(),
-                "scene_cutscene_devil",
+                StringMatch::Exact("scene_cutscene_devil"),
                 "Cutscene",
                 &["devil_cinematic_bad_ending_transition_0001"],
             ))
@@ -169,7 +171,7 @@ impl<'a> Memory<'a> {
                 unity.process,
                 unity.module.clone(),
                 scene_manager.clone(),
-                "scene_win",
+                StringMatch::Exact("scene_win"),
                 "WinScreen",
                 &["UI", "Canvas", "Scoring", "DifficultyTicker"],
                 "WinScreenTicker",
@@ -180,7 +182,7 @@ impl<'a> Memory<'a> {
                 unity.process,
                 unity.module.clone(),
                 scene_manager.clone(),
-                "scene_win",
+                StringMatch::Exact("scene_win"),
                 "WinScreen",
                 &["UI", "Canvas", "Scoring", "DifficultyTicker"],
                 "WinScreenTicker",
