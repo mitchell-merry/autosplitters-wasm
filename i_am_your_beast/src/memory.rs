@@ -59,45 +59,48 @@ impl<'a> Memory<'a> {
                     "levelNumber",
                 ],
             ))
-            .default(),
+            .default_on_fail(),
             level_state: Watcher::from(unity.path(
                 "GameManager",
                 0,
                 &["instance", "levelController", "levelState"],
             ))
-            .default(),
+            .default_on_fail(),
             tracking: Watcher::from(unity.path(
                 "GameManager",
                 0,
                 &["instance", "levelController", "gameplayTracker", "tracking"],
             ))
-            .default(),
+            .default_on_fail(),
             cutscene_id: Watcher::from(unity.path(
                 "GameManager",
                 0,
                 &["instance", "cutsceneInfoStorer", "sequence", "ID"],
             ))
-            .default(),
-            scene: Watcher::from(ActiveSceneNameGetter::new(unity.process, &scene_manager))
-                .default(),
+            .default_on_fail(),
+            scene: Watcher::from(ActiveSceneNameGetter::new(
+                unity.process,
+                scene_manager.clone(),
+            ))
+            .use_old_on_fail(),
             scene_transition_state: Watcher::from(unity.path(
                 "GameManager",
                 0,
                 &["instance", "activeSceneTransition", "state"],
             ))
-            .default(),
+            .default_on_fail(),
             combat_time: Watcher::from(unity.path(
                 "GameManager",
                 0,
                 &["instance", "levelController", "combatTimer", "timer"],
             ))
-            .default(),
+            .default_on_fail(),
             regained_combat_time: Watcher::from(unity.path(
                 "GameManager",
                 0,
                 &["instance", "levelController", "combatTimer", "regainedTime"],
             ))
-            .default(),
+            .default_on_fail(),
             ui_level_complete_time: Watcher::from(MonoBehaviourFieldPath::init(
                 unity.process,
                 unity.module.clone(),
@@ -115,13 +118,13 @@ impl<'a> Memory<'a> {
                 "UILevelCompleteTimeScoreBar",
                 &["currentTime"],
             )?)
-            .default(),
+            .default_on_fail(),
             timer_started: Watcher::from(unity.path(
                 "GameManager",
                 0,
                 &["instance", "levelController", "combatTimer", "timerStarted"],
             ))
-            .default(),
+            .default_on_fail(),
             credits_active: Watcher::from(GameObjectActivePath::new(
                 unity.process,
                 scene_manager.clone(),
@@ -129,7 +132,7 @@ impl<'a> Memory<'a> {
                 "Credits UI",
                 &[],
             ))
-            .default(),
+            .default_on_fail(),
             credits_index: Watcher::from(MonoBehaviourFieldPath::init(
                 unity.process,
                 unity.module.clone(),
@@ -140,7 +143,7 @@ impl<'a> Memory<'a> {
                 "UICreditsRoot",
                 &["totalIndex"],
             )?)
-            .default(),
+            .default_on_fail(),
         })
     }
 

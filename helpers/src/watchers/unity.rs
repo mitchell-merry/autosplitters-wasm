@@ -77,6 +77,12 @@ impl<'a> ActiveSceneNameGetter<'a> {
     }
 }
 
+impl<'a> From<ActiveSceneNameGetter<'a>> for Watcher<'a, String> {
+    fn from(value: ActiveSceneNameGetter<'a>) -> Self {
+        Watcher::new(Box::new(value))
+    }
+}
+
 impl<'a> ValueGetter<String> for ActiveSceneNameGetter<'a> {
     fn get(&self) -> Result<String, Box<dyn Error>> {
         Ok(self
