@@ -17,7 +17,6 @@ use asr::{future::next_tick, print_message, timer, Process};
 use helpers_iayb::error::SimpleError;
 use helpers_iayb::watchers::unity::UnityImage;
 use std::error::Error;
-use std::ops::Deref;
 use std::rc::Rc;
 
 asr::async_main!(stable);
@@ -27,12 +26,12 @@ const PROCESS_NAMES: [&str; 1] = [
     "I Am Your Beast.exe",
 ];
 
-const SCENE_LEVEL_SELECT: &'static str = "Scenes/UI/Menus/LevelSelect";
-const SCENE_CUTSCENE: &'static str = "Scenes/UI/Cutscenes/Cutscene";
-const SCENE_TUTORIAL_1: &'static str = "Scenes/!___STORY SCENES/#01a_Special_Tutorial";
-const SCENE_TUTORIAL_2: &'static str = "#01c_Special_Tutorial";
-const SCENE_WALKOUT: &'static str = "Scenes/!___STORY SCENES/#2_Corridor_WabbitSeason";
-const SCENE_MERCY: &'static str = "Scenes/!___STORY SCENES/#25_Special_Blinded";
+const SCENE_LEVEL_SELECT: &str = "Scenes/UI/Menus/LevelSelect";
+const SCENE_CUTSCENE: &str = "Scenes/UI/Cutscenes/Cutscene";
+const SCENE_TUTORIAL_1: &str = "Scenes/!___STORY SCENES/#01a_Special_Tutorial";
+const SCENE_TUTORIAL_2: &str = "#01c_Special_Tutorial";
+const SCENE_WALKOUT: &str = "Scenes/!___STORY SCENES/#2_Corridor_WabbitSeason";
+const SCENE_MERCY: &str = "Scenes/!___STORY SCENES/#25_Special_Blinded";
 
 #[derive(Default)]
 struct MeasuredState {
@@ -130,7 +129,7 @@ async fn tick<'a>(
     settings: &mut Settings,
 ) -> Result<(), Box<dyn Error>> {
     let memory = &iamyourbeast.memory;
-    let mut measured_state = &mut iamyourbeast.measured_state;
+    let measured_state = &mut iamyourbeast.measured_state;
     let transition_scene = memory.transition_scene.current_string()?;
     let old_transition_scene = memory.transition_scene.old_string()?;
     let current_ui_time = (memory.ui_level_complete_time.current()? * 100f32).round() / 100f32;
@@ -154,7 +153,7 @@ async fn tick<'a>(
         "cutscene_id",
         &format!("{:?}", memory.cutscene_id.current()?),
     );
-    set_variable("transition_scene", &format!("{}", transition_scene));
+    set_variable("transition_scene", &transition_scene);
     set_variable(
         "scene_transition_state",
         &format!("{:?}", memory.scene_transition_state.current()?),
