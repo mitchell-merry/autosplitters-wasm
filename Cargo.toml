@@ -5,6 +5,7 @@ members = [
     "dismantled",
     "doom_the_dark_ages",
     "helpers",
+    "helpers_iayb",
     "i_am_your_beast",
     "idtech",
     "kuru_kuru_kururin",
@@ -15,8 +16,8 @@ members = [
 ]
 
 [workspace.dependencies]
-#asr = { git = "https://github.com/mitchell-merry/asr", branch = "some-helpers" }
-asr = { path = "../asr" }
+asr = { git = "https://github.com/mitchell-merry/asr", branch = "some-helpers" }
+#asr = { path = "../asr" }
 
 [profile.release]
 lto = true

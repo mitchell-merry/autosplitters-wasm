@@ -20,9 +20,24 @@ checksum = "7c02d123df017efcdfbd739ef81735b36c5ba83ec3c59c80a9d7ecc718f92e50"
 [[package]]
 name = "asr"
 version = "0.1.0"
+source = "git+https://github.com/mitchell-merry/asr?branch=some-helpers#f1f93cb650ca751d17f15ba0b8575958e36f3ec8"
 dependencies = [
  "arrayvec",
- "asr-derive",
+ "asr-derive 0.1.0 (git+https://github.com/mitchell-merry/asr?branch=some-helpers)",
+ "bitflags",
+ "bytemuck",
+ "memchr",
+ "time",
+ "wasi",
+]
+
+[[package]]
+name = "asr"
+version = "0.1.0"
+source = "git+https://github.com/mitchell-merry/asr?branch=v3-fixes#5e9cf4e99625609f1a780cddb9b6910c30a1e3b6"
+dependencies = [
+ "arrayvec",
+ "asr-derive 0.1.0 (git+https://github.com/mitchell-merry/asr?branch=v3-fixes)",
  "bitflags",
  "bytemuck",
  "memchr",
@@ -33,6 +48,18 @@ dependencies = [
 [[package]]
 name = "asr-derive"
 version = "0.1.0"
+source = "git+https://github.com/mitchell-merry/asr?branch=some-helpers#f1f93cb650ca751d17f15ba0b8575958e36f3ec8"
+dependencies = [
+ "heck",
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "asr-derive"
+version = "0.1.0"
+source = "git+https://github.com/mitchell-merry/asr?branch=v3-fixes#5e9cf4e99625609f1a780cddb9b6910c30a1e3b6"
 dependencies = [
  "heck",
  "proc-macro2",
@@ -80,7 +107,7 @@ dependencies = [
 name = "cuphead"
 version = "0.1.0"
 dependencies = [
- "asr",
+ "asr 0.1.0 (git+https://github.com/mitchell-merry/asr?branch=some-helpers)",
  "bytemuck",
  "helpers",
  "once_cell",
@@ -99,7 +126,7 @@ dependencies = [
 name = "dismantled"
 version = "0.1.0"
 dependencies = [
- "asr",
+ "asr 0.1.0 (git+https://github.com/mitchell-merry/asr?branch=some-helpers)",
  "helpers",
  "paste",
  "zdoom",
@@ -109,7 +136,7 @@ dependencies = [
 name = "doom_the_dark_ages"
 version = "0.1.0"
 dependencies = [
- "asr",
+ "asr 0.1.0 (git+https://github.com/mitchell-merry/asr?branch=some-helpers)",
  "bytemuck",
  "helpers",
  "idtech",
@@ -126,7 +153,19 @@ checksum = "95505c38b4572b2d910cecb0281560f54b440a19336cbbcb27bf6ce6adc6f5a8"
 name = "helpers"
 version = "0.1.0"
 dependencies = [
- "asr",
+ "asr 0.1.0 (git+https://github.com/mitchell-merry/asr?branch=some-helpers)",
+ "bytemuck",
+ "once_cell",
+ "paste",
+ "ron",
+ "serde",
+]
+
+[[package]]
+name = "helpers_iayb"
+version = "0.1.0"
+dependencies = [
+ "asr 0.1.0 (git+https://github.com/mitchell-merry/asr?branch=v3-fixes)",
  "bytemuck",
  "once_cell",
  "paste",
@@ -138,9 +177,9 @@ dependencies = [
 name = "i_am_your_beast"
 version = "0.1.0"
 dependencies = [
- "asr",
+ "asr 0.1.0 (git+https://github.com/mitchell-merry/asr?branch=v3-fixes)",
  "bytemuck",
- "helpers",
+ "helpers_iayb",
  "once_cell",
 ]
 
@@ -148,7 +187,7 @@ dependencies = [
 name = "idtech"
 version = "0.1.0"
 dependencies = [
- "asr",
+ "asr 0.1.0 (git+https://github.com/mitchell-merry/asr?branch=some-helpers)",
  "bitflags",
  "bytemuck",
  "helpers",
@@ -160,7 +199,7 @@ dependencies = [
 name = "kuru_kuru_kururin"
 version = "0.1.0"
 dependencies = [
- "asr",
+ "asr 0.1.0 (git+https://github.com/mitchell-merry/asr?branch=some-helpers)",
  "bitflags",
  "bytemuck",
  "helpers",
@@ -260,7 +299,7 @@ dependencies = [
 name = "selaco"
 version = "0.1.0"
 dependencies = [
- "asr",
+ "asr 0.1.0 (git+https://github.com/mitchell-merry/asr?branch=some-helpers)",
  "helpers",
  "zdoom",
 ]
@@ -299,7 +338,7 @@ dependencies = [
 name = "snap_the_sentinel"
 version = "0.1.0"
 dependencies = [
- "asr",
+ "asr 0.1.0 (git+https://github.com/mitchell-merry/asr?branch=some-helpers)",
  "helpers",
  "zdoom",
 ]
@@ -319,7 +358,7 @@ dependencies = [
 name = "test_project"
 version = "0.1.0"
 dependencies = [
- "asr",
+ "asr 0.1.0 (git+https://github.com/mitchell-merry/asr?branch=some-helpers)",
  "bytemuck",
  "helpers",
  "once_cell",
@@ -359,7 +398,7 @@ checksum = "ccf3ec651a847eb01de73ccad15eb7d99f80485de043efb2f370cd654f4ea44b"
 name = "zdoom"
 version = "0.1.0"
 dependencies = [
- "asr",
+ "asr 0.1.0 (git+https://github.com/mitchell-merry/asr?branch=some-helpers)",
  "bitflags",
  "bytemuck",
  "once_cell",

@@ -1,4 +1,4 @@
-extern crate helpers;
+extern crate helpers_iayb;
 mod enums;
 mod memory;
 mod settings;
@@ -14,8 +14,8 @@ use asr::timer::{
     pause_game_time, reset, resume_game_time, set_game_time, set_variable, split, state, TimerState,
 };
 use asr::{future::next_tick, print_message, timer, Process};
-use helpers::error::SimpleError;
-use helpers::watchers::unity::UnityImage;
+use helpers_iayb::error::SimpleError;
+use helpers_iayb::watchers::unity::UnityImage;
 use std::error::Error;
 use std::ops::Deref;
 use std::rc::Rc;
@@ -71,7 +71,7 @@ struct IAmYourBeast<'a> {
 }
 
 async fn on_attach(process: &Process, settings: &mut Settings) -> Result<(), Box<dyn Error>> {
-    let mut iamyourbeast = helpers::try_load::wait_try_load_millis::<IAmYourBeast, _, _>(
+    let mut iamyourbeast = helpers_iayb::try_load::wait_try_load_millis::<IAmYourBeast, _, _>(
         async || {
             print_message("  => loading module");
             let module = Module::attach_auto_detect(process)
