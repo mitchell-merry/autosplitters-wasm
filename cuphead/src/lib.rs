@@ -471,39 +471,23 @@ fn monitor_star_skip(
 
     let diff: Duration = end.duration_since(start);
 
-    match memory.level_difficulty.current()? {
-        Mode::Easy => {
-            if diff < STAR_SKIP_TIME_FIRST {
-                measured_state.star_skip_counter += 1;
-                measured_state.star_skip_counter_decimal += 6;
-            }
-        }
+    // (absolute number of stars skipped, stars skipped as a fraction of 6)
+    let (increase_counter, increase_decimal_counter) = match memory.level_difficulty.current()? {
+        // simple - one skipped star is a full skip (6)
+        Mode::Easy if diff < STAR_SKIP_TIME_FIRST => (1, 6),
+        // regular - two skipped stars is a full skip (6), one is a half skip (3 = 6/2)
+        Mode::Normal if diff < STAR_SKIP_TIME_FIRST => (2, 6),
+        Mode::Normal if diff < STAR_SKIP_TIME_SECOND => (1, 3),
+        // regular - three skipped star is a full skip (6), one is a third skip (2 = 6/3)
+        Mode::Hard if diff < STAR_SKIP_TIME_FIRST => (3, 6),
+        Mode::Hard if diff < STAR_SKIP_TIME_SECOND => (2, 4),
+        Mode::Hard if diff < STAR_SKIP_TIME_THIRD => (1, 2),
+        // did not skip stars so don't increase counter
+        _ => (0, 0),
+    };
 
-        Mode::Normal => {
-            if diff < STAR_SKIP_TIME_FIRST {
-                measured_state.star_skip_counter += 2;
-                measured_state.star_skip_counter_decimal += 6;
-            } else if diff < STAR_SKIP_TIME_SECOND {
-                measured_state.star_skip_counter += 1;
-                measured_state.star_skip_counter_decimal += 3;
-            }
-        }
-
-        Mode::Hard => {
-            if diff < STAR_SKIP_TIME_FIRST {
-                measured_state.star_skip_counter += 3;
-                measured_state.star_skip_counter_decimal += 6;
-            } else if diff < STAR_SKIP_TIME_SECOND {
-                measured_state.star_skip_counter += 2;
-                measured_state.star_skip_counter_decimal += 4;
-            } else if diff < STAR_SKIP_TIME_THIRD {
-                measured_state.star_skip_counter += 1;
-                measured_state.star_skip_counter_decimal += 2;
-            }
-        }
-
-        _ => {}
-    }
+    measured_state.star_skip_counter += increase_counter;
+    measured_state.star_skip_counter_decimal += increase_decimal_counter;
 
     Ok(())
 }
