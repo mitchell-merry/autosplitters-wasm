@@ -33,6 +33,24 @@ const SCENE_TUTORIAL_2: &str = "#01c_Special_Tutorial";
 const SCENE_WALKOUT: &str = "#2_Corridor_WabbitSeason";
 const SCENE_MERCY: &str = "#25_Special_Blinded";
 
+const SCENE_CHALLENGE_BABA_YAGA: &str = "#1_Challenge_FirstSteps";
+const SCENE_SG_PITCH_BLACK: &str = "#1_PLP_PitchBlack";
+const SCENE_CS_LIMBO: &str = "##_CS_Limbo";
+
+const RTA_SCENE_STARTS: &[&str] = &[
+    SCENE_TUTORIAL_1,
+    SCENE_CHALLENGE_BABA_YAGA,
+    SCENE_SG_PITCH_BLACK,
+    SCENE_CS_LIMBO,
+];
+
+const IGT_SCENE_STARTS: &[&str] = &[
+    SCENE_WALKOUT,
+    SCENE_CHALLENGE_BABA_YAGA,
+    SCENE_SG_PITCH_BLACK,
+    SCENE_CS_LIMBO,
+];
+
 #[derive(Default)]
 struct MeasuredState {
     total_igt: f32,
@@ -189,14 +207,16 @@ async fn tick<'a>(
         let should_start = if settings.use_in_game_time {
             let igt_just_started = memory.timer_started.changed_from_to(false, true)?;
 
-            igt_just_started && (settings.individual_level_mode || scene == SCENE_WALKOUT)
+            igt_just_started
+                && (settings.individual_level_mode || IGT_SCENE_STARTS.contains(&scene.as_str()))
         } else {
             let just_loaded_into_level = memory
                 .scene_transition_state
                 .is(SceneTransitionState::TransitioningIn)?
                 && memory.tracking.changed_from_to(false, true)?;
 
-            just_loaded_into_level && (settings.individual_level_mode || scene == SCENE_TUTORIAL_1)
+            just_loaded_into_level
+                && (settings.individual_level_mode || RTA_SCENE_STARTS.contains(&scene.as_str()))
         };
 
         if should_start {
