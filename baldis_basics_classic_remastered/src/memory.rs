@@ -1,6 +1,6 @@
 use asr::game_engine::unity::scene_manager::SceneManager;
 use asr::PointerSize;
-use helpers::watchers::unity::UnityImage;
+use helpers::watchers::unity::{ActiveSceneNameGetter, UnityImage};
 use helpers::watchers::Watcher;
 use std::error::Error;
 use std::rc::Rc;
@@ -29,6 +29,8 @@ pub struct Memory<'a> {
     pub velocity: Watcher<'a, f32>,
     pub x: Watcher<'a, u64>,
     pub xx: Watcher<'a, u64>,
+    pub scene: Watcher<'a, String>,
+    pub ready_to_start: Watcher<'a, bool>,
 }
 
 impl<'a> Memory<'a> {
@@ -50,6 +52,15 @@ impl<'a> Memory<'a> {
                 1,
                 &["m_Instance", "players", "0x20", "plm"],
             )),
+            scene: Watcher::from(ActiveSceneNameGetter::new(
+                unity.process,
+                scene_manager.clone(),
+            )),
+            ready_to_start: Watcher::from(unity.path(
+                "CoreGameManager",
+                1,
+                &["m_Instance", "readyToStart"],
+            )),
         })
     }
 
@@ -57,5 +68,7 @@ impl<'a> Memory<'a> {
         self.velocity.invalidate();
         self.x.invalidate();
         self.xx.invalidate();
+        self.scene.invalidate();
+        self.ready_to_start.invalidate();
     }
 }

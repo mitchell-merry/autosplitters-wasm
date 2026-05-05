@@ -65,11 +65,11 @@ impl<'a, T: CheckedBitPattern> From<UnityPointerPath<'a>> for Watcher<'a, T> {
 
 pub struct ActiveSceneNameGetter<'a> {
     process: &'a Process,
-    scene_manager: &'a SceneManager,
+    scene_manager: Rc<SceneManager>,
 }
 
 impl<'a> ActiveSceneNameGetter<'a> {
-    pub fn new(process: &'a Process, scene_manager: &'a SceneManager) -> Self {
+    pub fn new(process: &'a Process, scene_manager: Rc<SceneManager>) -> Self {
         ActiveSceneNameGetter {
             process,
             scene_manager,
@@ -89,7 +89,7 @@ impl<'a> ValueGetter<String> for ActiveSceneNameGetter<'a> {
             .scene_manager
             .get_current_scene(self.process)
             .map_err(|_| SimpleError::from("could not get current scene"))?
-            .name(self.process, self.scene_manager)
+            .name(self.process, &self.scene_manager)
             .map_err(|_| SimpleError::from("could not get name of current scene"))?)
     }
 }

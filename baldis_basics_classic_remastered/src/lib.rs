@@ -8,7 +8,7 @@ use asr::future::retry;
 use asr::game_engine::unity::mono::Module;
 use asr::game_engine::unity::scene_manager::SceneManager;
 use asr::settings::Gui;
-use asr::timer::{set_variable, start, state, TimerState};
+use asr::timer::{pause_game_time, resume_game_time, set_variable, start, state, TimerState};
 use asr::{future::next_tick, print_message, Process};
 use helpers::error::SimpleError;
 use helpers::watchers::unity::UnityImage;
@@ -127,12 +127,26 @@ async fn tick<'a>(baldi: &mut Baldi<'a>, settings: &mut Settings) -> Result<(), 
     let measured_state = &mut baldi.measured_state;
 
     set_variable("velocity", &format!("{:?}", &memory.velocity.current()));
+    set_variable("scene", &format!("{:?}", &memory.scene.current()));
+    set_variable(
+        "ready_to_start",
+        &format!("{:?}", &memory.ready_to_start.current()),
+    );
     set_variable("x", &format!("{:X?}", &memory.x.current()));
     set_variable("xx", &format!("{:X?}", &memory.xx.current()));
 
     if state() == TimerState::NotRunning {
         if memory.velocity.changed_from(0f32)? {
             start();
+        }
+    }
+
+    if state() == TimerState::Running {
+        // TODO we really should just be checking on if the scene manager is loading
+        if memory.ready_to_start.current()? {
+            resume_game_time();
+        } else {
+            pause_game_time();
         }
     }
 
