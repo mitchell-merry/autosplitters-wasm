@@ -1,6 +1,7 @@
 [workspace]
 resolver = "2"
 members = [
+    "baldis_basics_classic_remastered",
     "cuphead",
     "dismantled",
     "doom_the_dark_ages",
@@ -16,8 +17,8 @@ members = [
 ]
 
 [workspace.dependencies]
-asr = { git = "https://github.com/mitchell-merry/asr", branch = "some-helpers" }
-#asr = { path = "../asr" }
+#asr = { git = "https://github.com/mitchell-merry/asr", branch = "some-helpers" }
+asr = { path = "../asr" }
 
 [profile.release]
 lto = true
