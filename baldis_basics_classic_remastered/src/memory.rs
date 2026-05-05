@@ -1,6 +1,9 @@
 use asr::game_engine::unity::scene_manager::SceneManager;
+use asr::string::ArrayWString;
 use asr::PointerSize;
-use helpers::watchers::unity::{ActiveSceneNameGetter, UnityImage};
+use helpers::watchers::unity::{
+    ActiveSceneNameGetter, GameObjectActivePath, StringMatch, UnityImage,
+};
 use helpers::watchers::Watcher;
 use std::error::Error;
 use std::rc::Rc;
@@ -32,6 +35,10 @@ pub struct Memory<'a> {
     pub scene: Watcher<'a, String>,
     pub ready_to_start: Watcher<'a, bool>,
     pub transition_active: Watcher<'a, bool>,
+    pub win_screen_active: Watcher<'a, bool>,
+    pub current_level: Watcher<'a, u32>,
+    pub current_level_title: Watcher<'a, ArrayWString<128>>,
+    pub next_level_title: Watcher<'a, ArrayWString<128>>,
 }
 
 impl<'a> Memory<'a> {
@@ -61,12 +68,51 @@ impl<'a> Memory<'a> {
                 "CoreGameManager",
                 1,
                 &["m_Instance", "readyToStart"],
-            )),
+            ))
+            .default_given(true),
             transition_active: Watcher::from(unity.path(
                 "GlobalCam",
                 1,
                 &["m_Instance", "transitionActive"],
-            )),
+            ))
+            .default_given(false),
+            win_screen_active: Watcher::from(
+                GameObjectActivePath::new(
+                    unity.process,
+                    scene_manager.clone(),
+                    StringMatch::Exact("DontDestroyOnLoad"),
+                    "ClassicWin(Clone)",
+                    &[],
+                )
+                .cache_object(false),
+            )
+            .default_given(false),
+            current_level: Watcher::from(unity.path(
+                "CoreGameManager",
+                1,
+                &["m_Instance", "sceneObject", "levelNo"],
+            )), // .default_given(false),
+            current_level_title: Watcher::from(unity.path(
+                "CoreGameManager",
+                1,
+                &[
+                    "m_Instance",
+                    "sceneObject",
+                    "levelTitle",
+                    offsets.string_contents,
+                ],
+            )), // .default_given(false),
+            next_level_title: Watcher::from(unity.path(
+                "CoreGameManager",
+                1,
+                &[
+                    "m_Instance",
+                    "sceneObject",
+                    "nextLevel",
+                    "levelTitle",
+                    offsets.string_contents,
+                ],
+            )), // .default_given(false),
         })
     }
 
@@ -77,5 +123,9 @@ impl<'a> Memory<'a> {
         self.scene.invalidate();
         self.ready_to_start.invalidate();
         self.transition_active.invalidate();
+        self.win_screen_active.invalidate();
+        self.current_level.invalidate();
+        self.current_level_title.invalidate();
+        self.next_level_title.invalidate();
     }
 }

@@ -122,6 +122,8 @@ pub struct GameObjectActivePath<'a> {
     root_object_name: &'static str,
     path: &'static [&'static str],
 
+    use_cached_object: bool,
+
     cached_object: Cell<Option<CppGameObject>>,
 }
 
@@ -139,6 +141,19 @@ impl<'a> GameObjectActivePath<'a> {
             scene,
             root_object_name,
             path,
+            use_cached_object: true,
+            cached_object: Cell::new(None),
+        }
+    }
+
+    pub fn cache_object(self, value: bool) -> GameObjectActivePath<'a> {
+        GameObjectActivePath {
+            process: self.process,
+            scene_manager: self.scene_manager,
+            scene: self.scene,
+            root_object_name: self.root_object_name,
+            path: self.path,
+            use_cached_object: value,
             cached_object: Cell::new(None),
         }
     }
@@ -146,14 +161,19 @@ impl<'a> GameObjectActivePath<'a> {
 
 impl<'a> ValueGetter<bool> for GameObjectActivePath<'a> {
     fn get(&self) -> Result<bool, Box<dyn Error>> {
-        let active_scene = get_scene_if_active(self.process, &self.scene_manager, &self.scene)
-            .inspect_err(|_| self.cached_object.set(None))?;
+        let scene = match self.scene {
+            StringMatch::Exact("DontDestroyOnLoad") => {
+                Ok(self.scene_manager.get_dont_destroy_on_load_scene())
+            }
+            _ => get_scene_if_active(self.process, &self.scene_manager, &self.scene),
+        }
+        .inspect_err(|_| self.cached_object.set(None))?;
 
         // this is pretty jank, but we're using the cached address if one exists
         let game_object = match self.cached_object.take() {
             Some(game_object) => game_object,
             None => {
-                let transform = active_scene
+                let transform = scene
                     .find_transform(
                         self.process,
                         &self.scene_manager,

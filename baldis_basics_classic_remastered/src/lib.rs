@@ -8,7 +8,9 @@ use asr::future::retry;
 use asr::game_engine::unity::mono::Module;
 use asr::game_engine::unity::scene_manager::SceneManager;
 use asr::settings::Gui;
-use asr::timer::{pause_game_time, resume_game_time, set_variable, start, state, TimerState};
+use asr::timer::{
+    pause_game_time, resume_game_time, set_variable, split, start, state, TimerState,
+};
 use asr::{future::next_tick, print_message, Process};
 use helpers::error::SimpleError;
 use helpers::watchers::unity::UnityImage;
@@ -136,6 +138,22 @@ async fn tick<'a>(baldi: &mut Baldi<'a>, settings: &mut Settings) -> Result<(), 
         "transition_active",
         &format!("{:?}", &memory.transition_active.current()),
     );
+    set_variable(
+        "win screen active",
+        &format!("{:?}", &memory.win_screen_active.current()),
+    );
+    set_variable(
+        "current level",
+        &format!("{:X?}", &memory.current_level.current()),
+    );
+    set_variable(
+        "current level title",
+        &format!("{:X?}", &memory.current_level_title.current_string()),
+    );
+    set_variable(
+        "next level title",
+        &format!("{:X?}", &memory.next_level_title.current_string()),
+    );
     set_variable("x", &format!("{:X?}", &memory.x.current()));
     set_variable("xx", &format!("{:X?}", &memory.xx.current()));
 
@@ -158,6 +176,10 @@ async fn tick<'a>(baldi: &mut Baldi<'a>, settings: &mut Settings) -> Result<(), 
             pause_game_time();
         } else {
             resume_game_time();
+        }
+
+        if memory.win_screen_active.changed_from_to(false, true)? {
+            split();
         }
     }
 
