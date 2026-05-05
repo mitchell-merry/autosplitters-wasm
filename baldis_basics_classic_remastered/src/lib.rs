@@ -132,6 +132,10 @@ async fn tick<'a>(baldi: &mut Baldi<'a>, settings: &mut Settings) -> Result<(), 
         "ready_to_start",
         &format!("{:?}", &memory.ready_to_start.current()),
     );
+    set_variable(
+        "transition_active",
+        &format!("{:?}", &memory.transition_active.current()),
+    );
     set_variable("x", &format!("{:X?}", &memory.x.current()));
     set_variable("xx", &format!("{:X?}", &memory.xx.current()));
 
@@ -142,11 +146,18 @@ async fn tick<'a>(baldi: &mut Baldi<'a>, settings: &mut Settings) -> Result<(), 
     }
 
     if state() == TimerState::Running {
-        // TODO we really should just be checking on if the scene manager is loading
-        if memory.ready_to_start.current()? {
-            resume_game_time();
-        } else {
+        let is_loading =
+            // from main menu into game (never usually in runs anyways)
+            // TODO we really should just be checking on if the scene manager is loading
+            //  for the first
+            !memory.ready_to_start.current()?
+            // if we're transitioning
+            || (settings.pause_on_transition && memory.transition_active.current()?);
+
+        if is_loading {
             pause_game_time();
+        } else {
+            resume_game_time();
         }
     }
 

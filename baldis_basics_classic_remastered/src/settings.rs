@@ -5,8 +5,8 @@ use asr::settings::Gui;
 
 #[derive(Gui)]
 pub struct Settings {
-    /// some setting
+    /// (Experimental) Pause game time on transitions
     ///
-    /// some description
-    pub individual_level_mode: bool,
+    /// Transitions (such as Dithers) now pause time.
+    pub pause_on_transition: bool,
 }

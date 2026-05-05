@@ -31,6 +31,7 @@ pub struct Memory<'a> {
     pub xx: Watcher<'a, u64>,
     pub scene: Watcher<'a, String>,
     pub ready_to_start: Watcher<'a, bool>,
+    pub transition_active: Watcher<'a, bool>,
 }
 
 impl<'a> Memory<'a> {
@@ -61,6 +62,11 @@ impl<'a> Memory<'a> {
                 1,
                 &["m_Instance", "readyToStart"],
             )),
+            transition_active: Watcher::from(unity.path(
+                "GlobalCam",
+                1,
+                &["m_Instance", "transitionActive"],
+            )),
         })
     }
 
@@ -70,5 +76,6 @@ impl<'a> Memory<'a> {
         self.xx.invalidate();
         self.scene.invalidate();
         self.ready_to_start.invalidate();
+        self.transition_active.invalidate();
     }
 }
