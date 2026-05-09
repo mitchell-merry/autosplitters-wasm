@@ -188,7 +188,9 @@ impl<'a> ValueGetter<bool> for GameObjectActivePath<'a> {
             }
         };
 
-        self.cached_object.set(Some(game_object.clone()));
+        if self.use_cached_object {
+            self.cached_object.set(Some(game_object.clone()));
+        }
 
         game_object
             .is_active_in_hierarchy(self.process, &self.scene_manager)
