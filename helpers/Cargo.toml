@@ -6,6 +6,7 @@ edition = "2021"
 [features]
 gba = ["asr/gba"]
 unity = ["asr/unity"]
+unity-objects = []
 
 [dependencies]
 asr = { workspace = true, features = ["alloc", "derive", "signature"] }

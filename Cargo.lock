@@ -25,7 +25,6 @@ dependencies = [
  "asr-derive 0.1.0",
  "bitflags",
  "bytemuck",
- "memchr",
  "time",
  "wasi",
 ]
@@ -70,11 +69,7 @@ name = "baldis_basics_classic_remastered"
 version = "0.1.0"
 dependencies = [
  "asr 0.1.0",
- "bytemuck",
  "helpers",
- "once_cell",
- "strum",
- "strum_macros",
 ]
 
 [[package]]

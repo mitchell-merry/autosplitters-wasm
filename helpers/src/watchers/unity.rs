@@ -1,7 +1,7 @@
 use crate::error::SimpleError;
 use crate::watchers::{ValueGetter, Watcher};
 use asr::game_engine::unity::mono::{Class, Image, Module, UnityPointer};
-use asr::game_engine::unity::scene_manager::{CppGameObject, Scene, SceneManager};
+use asr::game_engine::unity::scene_manager::{Scene, SceneManager};
 use asr::{print_message, Address, Process};
 use bytemuck::CheckedBitPattern;
 use std::cell::{Cell, RefCell};
@@ -63,11 +63,13 @@ impl<'a, T: CheckedBitPattern> From<UnityPointerPath<'a>> for Watcher<'a, T> {
     }
 }
 
+#[cfg(feature = "unity-objects")]
 pub struct ActiveSceneNameGetter<'a> {
     process: &'a Process,
     scene_manager: Rc<SceneManager>,
 }
 
+#[cfg(feature = "unity-objects")]
 impl<'a> ActiveSceneNameGetter<'a> {
     pub fn new(process: &'a Process, scene_manager: Rc<SceneManager>) -> Self {
         ActiveSceneNameGetter {
@@ -77,12 +79,14 @@ impl<'a> ActiveSceneNameGetter<'a> {
     }
 }
 
+#[cfg(feature = "unity-objects")]
 impl<'a> From<ActiveSceneNameGetter<'a>> for Watcher<'a, String> {
     fn from(value: ActiveSceneNameGetter<'a>) -> Self {
         Watcher::new(Box::new(value))
     }
 }
 
+#[cfg(feature = "unity-objects")]
 impl<'a> ValueGetter<String> for ActiveSceneNameGetter<'a> {
     fn get(&self) -> Result<String, Box<dyn Error>> {
         Ok(self
@@ -94,6 +98,7 @@ impl<'a> ValueGetter<String> for ActiveSceneNameGetter<'a> {
     }
 }
 
+#[cfg(feature = "unity-objects")]
 fn get_scene_if_active(
     process: &Process,
     scene_manager: &SceneManager,
@@ -114,6 +119,7 @@ fn get_scene_if_active(
     Ok(active_scene)
 }
 
+#[cfg(feature = "unity-objects")]
 pub struct GameObjectActivePath<'a> {
     process: &'a Process,
     scene_manager: Rc<SceneManager>,
@@ -127,6 +133,7 @@ pub struct GameObjectActivePath<'a> {
     cached_object: Cell<Option<CppGameObject>>,
 }
 
+#[cfg(feature = "unity-objects")]
 impl<'a> GameObjectActivePath<'a> {
     pub fn new(
         process: &'a Process,
@@ -159,6 +166,7 @@ impl<'a> GameObjectActivePath<'a> {
     }
 }
 
+#[cfg(feature = "unity-objects")]
 impl<'a> ValueGetter<bool> for GameObjectActivePath<'a> {
     fn get(&self) -> Result<bool, Box<dyn Error>> {
         let scene = match self.scene {
@@ -198,6 +206,7 @@ impl<'a> ValueGetter<bool> for GameObjectActivePath<'a> {
     }
 }
 
+#[cfg(feature = "unity-objects")]
 impl<'a> From<GameObjectActivePath<'a>> for Watcher<'a, bool> {
     fn from(value: GameObjectActivePath<'a>) -> Self {
         Watcher::new(Box::new(value))
@@ -219,12 +228,14 @@ impl StringMatch {
     }
 }
 
+#[cfg(feature = "unity-objects")]
 struct MBFPInternal {
     offsets: [u64; 128],
     resolved_offsets: usize,
     depth: usize,
 }
 
+#[cfg(feature = "unity-objects")]
 pub struct MonoBehaviourFieldPath<'a, T: CheckedBitPattern> {
     _phantom: PhantomData<T>,
     process: &'a Process,
@@ -242,6 +253,7 @@ pub struct MonoBehaviourFieldPath<'a, T: CheckedBitPattern> {
     cached_component: Cell<Option<Address>>,
 }
 
+#[cfg(feature = "unity-objects")]
 impl<'a, T: CheckedBitPattern> MonoBehaviourFieldPath<'a, T> {
     #[allow(clippy::too_many_arguments)]
     pub fn init(
@@ -275,6 +287,7 @@ impl<'a, T: CheckedBitPattern> MonoBehaviourFieldPath<'a, T> {
 }
 
 // FIXME: all of this is very jank
+#[cfg(feature = "unity-objects")]
 impl<'a, T: CheckedBitPattern> ValueGetter<T> for MonoBehaviourFieldPath<'a, T> {
     fn get(&self) -> Result<T, Box<dyn Error>> {
         let active_scene = get_scene_if_active(self.process, &self.scene_manager, &self.scene)
@@ -349,6 +362,7 @@ impl<'a, T: CheckedBitPattern> ValueGetter<T> for MonoBehaviourFieldPath<'a, T> 
     }
 }
 
+#[cfg(feature = "unity-objects")]
 impl<'a, T: CheckedBitPattern + 'a> From<MonoBehaviourFieldPath<'a, T>> for Watcher<'a, T> {
     fn from(value: MonoBehaviourFieldPath<'a, T>) -> Self {
         Watcher::new(Box::new(value))

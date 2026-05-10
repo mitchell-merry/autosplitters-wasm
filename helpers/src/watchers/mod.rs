@@ -16,9 +16,9 @@ pub trait ValueGetter<T> {
     fn get(&self) -> Result<T, Box<dyn Error>>;
 }
 
-impl<T: Copy> ValueGetter<T> for T {
+impl<T: Clone> ValueGetter<T> for T {
     fn get(&self) -> Result<T, Box<dyn Error>> {
-        Ok(*self)
+        Ok(self.clone())
     }
 }
 
@@ -159,6 +159,12 @@ impl<'a, T: CheckedBitPattern + Default> Watcher<'a, T> {
             old: self.old,
             default: Some(T::default()),
         }
+    }
+}
+
+impl<'a, T: Clone + PartialEq + 'a> From<T> for Watcher<'a, T> {
+    fn from(value: T) -> Self {
+        Watcher::new(Box::new(value))
     }
 }
 

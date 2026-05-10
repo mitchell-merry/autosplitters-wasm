@@ -24,7 +24,7 @@ const PROCESS_NAMES: [&str; 2] = [
     // Windows
     "BALDI.exe",
     // Mac
-    "Baldi",
+    "Baldi's Basics Classic Remastered",
 ];
 
 #[derive(Default)]
@@ -102,12 +102,12 @@ async fn try_load<'a>(process: &'a Process) -> Result<Baldi<'a>, Box<dyn Error>>
     let unity = UnityImage::new(process, module, image);
     print_message("  => default image loaded, loading scene manager");
 
-    let sm = SceneManager::attach(process)
-        .ok_or(SimpleError::from("failed to attach to asr scene manager"))?;
-    let sm = Rc::new(sm);
-    print_message("  => scene manager loaded, loading pointer paths");
+    // let sm = SceneManager::attach(process)
+    //     .ok_or(SimpleError::from("failed to attach to asr scene manager"))?;
+    // let sm = Rc::new(sm);
+    // print_message("  => scene manager loaded, loading pointer paths");
 
-    let memory = Memory::new(unity, sm.clone())?;
+    let memory = Memory::new(unity)?;//, sm.clone())?;
     print_message("  => pointer paths loaded");
 
     Ok(Baldi {

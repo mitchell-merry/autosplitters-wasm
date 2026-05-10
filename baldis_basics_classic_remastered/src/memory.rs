@@ -2,7 +2,7 @@ use asr::game_engine::unity::scene_manager::SceneManager;
 use asr::string::ArrayWString;
 use asr::PointerSize;
 use helpers::watchers::unity::{
-    ActiveSceneNameGetter, GameObjectActivePath, StringMatch, UnityImage,
+    UnityImage,
 };
 use helpers::watchers::Watcher;
 use std::error::Error;
@@ -44,26 +44,26 @@ pub struct Memory<'a> {
 impl<'a> Memory<'a> {
     pub fn new(
         unity: UnityImage<'a>,
-        scene_manager: Rc<SceneManager>,
+        // scene_manager: Rc<SceneManager>,
     ) -> Result<Memory<'a>, Box<dyn Error>> {
-        let offsets = Offsets::new(unity.module.get_pointer_size());
+        let offsets = Offsets::new(PointerSize::Bit64);
         Ok(Memory {
             velocity: Watcher::from(unity.path(
                 "CoreGameManager",
                 1,
                 &["m_Instance", "players", "0x20", "plm", "frameVelocity"],
-            ))
-            .default_given(0f32),
+            )),
             x: Watcher::from(unity.path("CoreGameManager", 1, &["m_Instance"])),
             xx: Watcher::from(unity.path(
                 "CoreGameManager",
                 1,
                 &["m_Instance", "players", "0x20", "plm"],
             )),
-            scene: Watcher::from(ActiveSceneNameGetter::new(
-                unity.process,
-                scene_manager.clone(),
-            )),
+            // scene: Watcher::from(ActiveSceneNameGetter::new(
+            //     unity.process,
+            //     scene_manager.clone(),
+            // )),
+            scene: Watcher::from(String::from("temp")),
             ready_to_start: Watcher::from(unity.path(
                 "CoreGameManager",
                 1,
@@ -76,17 +76,18 @@ impl<'a> Memory<'a> {
                 &["m_Instance", "transitionActive"],
             ))
             .default_given(false),
-            win_screen_active: Watcher::from(
-                GameObjectActivePath::new(
-                    unity.process,
-                    scene_manager.clone(),
-                    StringMatch::Exact("DontDestroyOnLoad"),
-                    "ClassicWin(Clone)",
-                    &[],
-                )
-                .cache_object(false),
-            )
-            .default_given(false),
+            win_screen_active: Watcher::from(false),
+            // win_screen_active: Watcher::from(
+            //     GameObjectActivePath::new(
+            //         unity.process,
+            //         scene_manager.clone(),
+            //         StringMatch::Exact("DontDestroyOnLoad"),
+            //         "ClassicWin(Clone)",
+            //         &[],
+            //     )
+            //     .cache_object(false),
+            // )
+            // .default_given(false),
             current_level: Watcher::from(unity.path(
                 "CoreGameManager",
                 1,
