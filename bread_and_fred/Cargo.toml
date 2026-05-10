@@ -1,0 +1,11 @@
+[package]
+name = "bread_and_fred"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+asr = { path = "../../asr", features = ["alloc", "derive", "unity"] }
+helpers = { path = "../helpers", features = ["unity"] }
+
+[lib]
+crate-type = ["cdylib"]

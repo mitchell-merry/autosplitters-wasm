@@ -2,6 +2,7 @@
 resolver = "2"
 members = [
     "baldis_basics_classic_remastered",
+    "bread_and_fred",
     "cuphead",
     "dismantled",
     "doom_the_dark_ages",
