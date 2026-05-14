@@ -3,11 +3,14 @@ use helpers::watchers::unity::UnityImage;
 use helpers::watchers::Watcher;
 use std::error::Error;
 use std::rc::Rc;
+use asr::Process;
 
 pub struct Memory<'a> {
     // pub global_timer: Watcher<'a, Address64>,
     // pub timer: Watcher<'a, Address64>,
     // pub game_manager: Watcher<'a, Address64>,
+    pub process: &'a Process,
+    pub scene_manager: Rc<SceneManager>,
     pub time: Watcher<'a, u64>,
     pub started_timestamp: Watcher<'a, u64>,
     pub running: Watcher<'a, bool>,
@@ -19,6 +22,8 @@ impl<'a> Memory<'a> {
         scene_manager: Rc<SceneManager>,
     ) -> Result<Memory<'a>, Box<dyn Error>> {
         Ok(Memory {
+            process: unity.process,
+            scene_manager: scene_manager.clone(),
             // global_timer: Watcher::from(unity.path("GlobalTimer", 2, &["Instance"])),
             // timer: Watcher::from(unity.path("Timer", 1, &["Instance"])),
             // game_manager: Watcher::from(unity.path("GameManager", 2, &["Instance"])),

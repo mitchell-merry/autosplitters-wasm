@@ -18,10 +18,11 @@ use std::rc::Rc;
 
 asr::async_main!(stable);
 
-const PROCESS_NAMES: [&str; 1] = [
+const PROCESS_NAMES: [&str; 2] = [
     // Windows
     // "Cuphead.exe",
     // Mac
+    "My project",
     "Bread_Fred",
 ];
 
@@ -148,6 +149,30 @@ async fn tick<'a>(game: &mut Game<'a>, _settings: &mut Settings) -> Result<(), B
     //     "game manager instance",
     //     &format!("{:?}", memory.game_manager.current()),
     // );
+
+    let s = game.memory.scene_manager.get_current_scene(game.memory.process).map_err(|_| SimpleError::from("failed to get current scene"))?;
+    print_message(&format!("s {s:?}:"));
+
+    s.root_game_objects(game.memory.process, &game.memory.scene_manager).for_each(|x| {
+        print_message(&format!("x {x:?}:"));
+        let name = x.get_name::<128>(game.memory.process, &game.memory.scene_manager).unwrap();
+        let name = name.validate_utf8().unwrap();
+        print_message(&format!("{name} ({x:?})"));
+
+        x.children(game.memory.process, &game.memory.scene_manager).unwrap().for_each(|y| {
+            print_message(&format!("y {y:?}:"));
+            let name2 = y.get_name::<128>(game.memory.process, &game.memory.scene_manager).unwrap();
+            let name2 = name2.validate_utf8().unwrap();
+            print_message(&format!(" -> {name2} ({y:?})"));
+        });
+    });
+
+    // let y = x.find_transform(game.memory.process, &game.memory.scene_manager, "aga", &["aga 2"]).map_err(|_| SimpleError::from("failed to get rgo"))?;
+    // print_message("aga2");
+    // let z = y.get_game_object(game.memory.process, &game.memory.scene_manager).map_err(|_| SimpleError::from("failed to get go"))?;
+    // print_message("aga3");
+    // set_variable("is active", &format!("{:?}", z.is_active_in_hierarchy(game.memory.process, &game.memory.scene_manager)));
+    // print_message("aga");
 
     if timer::state() == TimerState::NotRunning
         && memory.running.changed()?
