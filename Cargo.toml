@@ -1,6 +1,7 @@
 [workspace]
 resolver = "2"
 members = [
+    "a_short_hike",
     "baldis_basics_classic_remastered",
     "bread_and_fred",
     "cuphead",
@@ -10,10 +11,12 @@ members = [
     "helpers_iayb",
     "i_am_your_beast",
     "idtech",
+    "katana_zero",
     "kuru_kuru_kururin",
     "selaco",
     "snap_the_sentinel",
     "test_project",
+    "test_scene_manager",
     "zdoom"
 ]
 

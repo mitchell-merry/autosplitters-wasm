@@ -18,11 +18,14 @@ use std::rc::Rc;
 
 asr::async_main!(stable);
 
-const PROCESS_NAMES: [&str; 2] = [
+const PROCESS_NAMES: [&str; 6] = [
     // Windows
-    // "Cuphead.exe",
+    "Bread&Fred.exe",
+    "platformer-playground.exe",
     // Mac
     "My project",
+    "My project 6000",
+    "My project 6000.exe",
     "Bread_Fred",
 ];
 
@@ -70,6 +73,34 @@ async fn on_attach(process: &Process, settings: &mut Settings) -> Result<(), Box
         next_tick().await;
 
         game.memory.invalidate();
+
+        let s = game
+            .memory
+            .scene_manager
+            .get_current_scene(game.memory.process)
+            .map_err(|_| SimpleError::from("failed to get current scene"))?;
+        print_message(&format!("s {s:?}:"));
+
+        s.root_game_objects(game.memory.process, &game.memory.scene_manager)
+            .for_each(|x| {
+                print_message(&format!("x {x:?}:"));
+                let name = x
+                    .get_name::<128>(game.memory.process, &game.memory.scene_manager)
+                    .unwrap();
+                let name = name.validate_utf8().unwrap();
+                print_message(&format!("{name} ({x:?})"));
+
+                if let Ok(children) = x.children(game.memory.process, &game.memory.scene_manager) {
+                    children.for_each(|y| {
+                        print_message(&format!("y {y:?}:"));
+                        let name2 = y
+                            .get_name::<128>(game.memory.process, &game.memory.scene_manager)
+                            .unwrap();
+                        let name2 = name2.validate_utf8().unwrap();
+                        print_message(&format!(" -> {name2} ({y:?})"));
+                    });
+                }
+            });
 
         if let Err(_err) = tick(&mut game, settings).await {
             // print_message(&format!("tick failed: {err}"));
@@ -149,23 +180,6 @@ async fn tick<'a>(game: &mut Game<'a>, _settings: &mut Settings) -> Result<(), B
     //     "game manager instance",
     //     &format!("{:?}", memory.game_manager.current()),
     // );
-
-    let s = game.memory.scene_manager.get_current_scene(game.memory.process).map_err(|_| SimpleError::from("failed to get current scene"))?;
-    print_message(&format!("s {s:?}:"));
-
-    s.root_game_objects(game.memory.process, &game.memory.scene_manager).for_each(|x| {
-        print_message(&format!("x {x:?}:"));
-        let name = x.get_name::<128>(game.memory.process, &game.memory.scene_manager).unwrap();
-        let name = name.validate_utf8().unwrap();
-        print_message(&format!("{name} ({x:?})"));
-
-        x.children(game.memory.process, &game.memory.scene_manager).unwrap().for_each(|y| {
-            print_message(&format!("y {y:?}:"));
-            let name2 = y.get_name::<128>(game.memory.process, &game.memory.scene_manager).unwrap();
-            let name2 = name2.validate_utf8().unwrap();
-            print_message(&format!(" -> {name2} ({y:?})"));
-        });
-    });
 
     // let y = x.find_transform(game.memory.process, &game.memory.scene_manager, "aga", &["aga 2"]).map_err(|_| SimpleError::from("failed to get rgo"))?;
     // print_message("aga2");
