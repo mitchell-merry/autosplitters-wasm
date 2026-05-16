@@ -3,7 +3,7 @@ mod settings;
 
 use crate::settings::Settings;
 use asr::future::retry;
-use asr::game_engine::unity::scene_manager::{Scene, SceneManager, Transform};
+use asr::game_engine::unity::scene_manager::{Component, Scene, SceneManager, Transform};
 use asr::settings::Gui;
 use asr::string::ArrayCString;
 use asr::{future::next_tick, print_message, Address, Process};
@@ -12,7 +12,8 @@ use helpers::error::SimpleError;
 use std::error::Error;
 use std::rc::Rc;
 use asr::game_engine::unity::mono;
-use asr::game_engine::unity::mono::Module;
+use asr::game_engine::unity::mono::{Class, Module};
+use bytemuck::CheckedBitPattern;
 
 asr::async_main!(stable);
 
@@ -28,8 +29,10 @@ const PROCESS_NAMES: [&str; 6] = [
 ];
 
 trait UnityModule {
-    fn get_class_name(&self, process: &Process, class: Address) -> Result<String, Box<dyn Error>>;
+    fn get_component_name(&self, process: &Process, scene_manager: &SceneManager, component: &Component) -> Result<String, Box<dyn Error>>;
+    fn get_component_field<T: CheckedBitPattern>(&self, process: &Process, scene_manager: &SceneManager, component: &Component, field_name: &str) -> Result<T, Box<dyn Error>>;
     fn get_class(&self, process: &Process, class_name: &str) -> Result<Address, Box<dyn Error>>;
+    fn get_field_offset(&self, process: &Process, class: Address, field: &str) -> Result<u32, Box<dyn Error>>;
 }
 
 struct MonoModule {
@@ -44,15 +47,39 @@ impl MonoModule {
 }
 
 impl UnityModule for MonoModule {
-    fn get_class_name(&self, process: &Process, class: Address) -> Result<String, Box<dyn Error>> {
-        safe_cstr_to_str(mono::Class::get_from_component(process, &self.module, class)
-            .and_then(|class| class.get_name::<128>(process, &self.module)))
+    fn get_component_name(&self, process: &Process, scene_manager: &SceneManager, component: &Component) -> Result<String, Box<dyn Error>> {
+        let object = component.get_mono_object(process, scene_manager)
+            .map_err(|_| SimpleError::from("cant get mono object"))?;
+
+        let class = object.get_class(process, &self.module)
+            .map_err(|_| SimpleError::from("cant get mono object class"))?;
+
+        let name = safe_cstr_to_str(class.get_name::<128>(process, &self.module))
+            .map_err(|_| SimpleError::from("cant get mono class name"))?;
+        Ok(name)
     }
 
     fn get_class(&self, process: &Process, class_name: &str) -> Result<Address, Box<dyn Error>> {
         let image = self.module.get_default_image(process).ok_or(SimpleError::from("cant get default image"))?;
 
         Ok(image.get_class(process, &self.module, class_name).ok_or(SimpleError::from("cant get class"))?.class)
+    }
+
+    fn get_field_offset(&self, process: &Process, class: Address, field_name: &str) -> Result<u32, Box<dyn Error>> {
+        let class = Class { class };
+        Ok(class.get_field_offset(process, &self.module, field_name).ok_or(SimpleError::from("couldnt get field offset"))?)
+    }
+
+    fn get_component_field<T: CheckedBitPattern>(&self, process: &Process, scene_manager: &SceneManager, component: &Component, field_name: &str) -> Result<T, Box<dyn Error>> {
+        let object = component.get_mono_object(process, scene_manager)
+            .map_err(|_| SimpleError::from("cant get mono object"))?;
+
+        let class = object.get_class(process, &self.module)
+            .map_err(|_| SimpleError::from("cant get mono object class"))?;
+
+        let offset = class.get_field_offset(process, &self.module, field_name).ok_or(SimpleError::from("couldnt get field offset"))?;
+
+        Ok(process.read::<T>(object.address + offset).map_err(|_| SimpleError::from("cant read field value"))?)
     }
 }
 
@@ -83,9 +110,9 @@ async fn main() {
     }
 }
 
-struct Game {
+struct Game<T: UnityModule> {
     pub scene_manager: Rc<SceneManager>,
-    pub module: Box<dyn UnityModule>,
+    pub module: T,
 }
 
 pub fn safe_cstr_to_str<const N: usize>(
@@ -100,7 +127,7 @@ pub fn safe_cstr_to_str<const N: usize>(
     }
 }
 
-fn log_transform(process: &Process, game: &Game, transform: Transform, indent: &str) {
+fn log_transform<T: UnityModule>(process: &Process, game: &Game<T>, transform: Transform, indent: &str) {
     let name = safe_cstr_to_str(transform.get_name::<128>(process, &game.scene_manager));
     print_message(&format!("{indent}NAME: {name:?}"));
 
@@ -116,14 +143,24 @@ fn log_transform(process: &Process, game: &Game, transform: Transform, indent: &
             "{indent}ACTIVE IN HIERARCHY: {active_in_hierarchy:?}"
         ));
 
-        if let Ok(classes) = game_object.classes(process, &game.scene_manager) {
-            print_message(&format!("{indent}CLASSES:"));
-            classes.enumerate().for_each(|(i, class)| {
-                print_message(&format!("{indent}  CLASS: {class:?}"));
-                let name = game.module.get_class_name(process, class);
+        if let Ok(components) = game_object.components(process, &game.scene_manager) {
+            print_message(&format!("{indent}COMPONENTS:"));
+            components.enumerate().for_each(|(i, component)| {
+                print_message(&format!("{indent}  COMPONENT {i}: {component:?}"));
+                let name = game.module.get_component_name(process, &game.scene_manager, &component);
 
                 if let Ok(name) = name {
                     print_message(&format!("{indent}    NAME (MONO): {name:?}"));
+
+                    if name == "RestartScript" {
+                        print_message(&format!("{indent}    FIELDS:"));
+
+                        let special = game.module.get_component_field::<i32>(process, &game.scene_manager, &component, "special");
+                        print_message(&format!("{indent}      SPECIAL: {special:X?}"));
+
+                        let fps = game.module.get_component_field::<i32>(process, &game.scene_manager, &component, "FPS");
+                        print_message(&format!("{indent}      FPS: {fps:?}"));
+                    }
                 }
             })
         }
@@ -139,7 +176,7 @@ fn log_transform(process: &Process, game: &Game, transform: Transform, indent: &
     }
 }
 
-fn log_scene(process: &Process, game: &Game, s: Scene, indent: &str) {
+fn log_scene<T: UnityModule>(process: &Process, game: &Game<T>, s: Scene, indent: &str) {
     let path = safe_cstr_to_str(s.path::<128>(process, &game.scene_manager));
     print_message(&format!("{indent}PATH: {path:?}"));
     let index = s.index(process, &game.scene_manager);
@@ -168,7 +205,10 @@ async fn on_attach(process: &Process, settings: &mut Settings) -> Result<(), Box
     print_message(&format!("ACTIVE SCENE: {s:?}"));
     log_scene(process, &game, s, "  ");
 
-    print_message(&format!("RestartScript {:?}", game.module.get_class(process, "RestartScript")));
+    let class = game.module.get_class(process, "RestartScript");
+    print_message(&format!("RestartScript {:?}", class));
+    let offset = game.module.get_field_offset(process, class?, "FPS");
+    print_message(&format!("offset {:?}", offset));
 
     while process.is_open() {
         settings.update();
@@ -183,7 +223,7 @@ async fn on_attach(process: &Process, settings: &mut Settings) -> Result<(), Box
     Ok(())
 }
 
-async fn try_load<'a>(process: &'a Process) -> Result<Game, Box<dyn Error>> {
+async fn try_load<'a>(process: &'a Process) -> Result<Game<MonoModule>, Box<dyn Error>> {
     print_message("  => loading scene manager");
 
     let sm = SceneManager::attach(process)
@@ -193,7 +233,7 @@ async fn try_load<'a>(process: &'a Process) -> Result<Game, Box<dyn Error>> {
 
     let module = MonoModule::attach(process)?;
 
-    Ok(Game { scene_manager: sm, module: Box::new(module) })
+    Ok(Game { scene_manager: sm, module })
 }
 
 fn split_log(condition: bool, string: &str) -> bool {
@@ -204,6 +244,6 @@ fn split_log(condition: bool, string: &str) -> bool {
     condition
 }
 
-async fn tick<'a>(game: &mut Game, _settings: &mut Settings) -> Result<(), Box<dyn Error>> {
+async fn tick<'a, T: UnityModule>(game: &mut Game<T>, _settings: &mut Settings) -> Result<(), Box<dyn Error>> {
     Ok(())
 }

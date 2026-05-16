@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 asr = { path = "../../asr", features = ["alloc", "derive", "unity"] }
+bytemuck = "1.23.1"
 helpers = { path = "../helpers", features = ["unity"] }
 
 [lib]

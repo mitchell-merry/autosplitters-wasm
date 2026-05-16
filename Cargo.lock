@@ -427,6 +427,7 @@ name = "test_scene_manager"
 version = "0.1.0"
 dependencies = [
  "asr 0.1.0",
+ "bytemuck",
  "helpers",
 ]
 
