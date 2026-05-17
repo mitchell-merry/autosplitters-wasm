@@ -11,7 +11,7 @@ use core::time::Duration;
 use helpers::error::SimpleError;
 use std::error::Error;
 use std::rc::Rc;
-use asr::game_engine::unity::mono;
+use asr::game_engine::unity::{il2cpp, mono};
 use asr::game_engine::unity::mono::{Class, Module};
 use bytemuck::CheckedBitPattern;
 
@@ -41,7 +41,7 @@ struct MonoModule {
 
 impl MonoModule {
     pub fn attach(process: &Process) -> Result<Self, Box<dyn Error>> {
-        let module = Module::attach_auto_detect(process).ok_or(SimpleError::from("cant auto attach module"))?;
+        let module = Module::attach_auto_detect(process).ok_or(SimpleError::from("cant auto attach mono module"))?;
         Ok(MonoModule { module })
     }
 }
@@ -80,6 +80,57 @@ impl UnityModule for MonoModule {
         let offset = class.get_field_offset(process, &self.module, field_name).ok_or(SimpleError::from("couldnt get field offset"))?;
 
         Ok(process.read::<T>(object.address + offset).map_err(|_| SimpleError::from("cant read field value"))?)
+    }
+}
+
+
+struct IL2CPPModule {
+    pub module: il2cpp::Module,
+}
+
+impl IL2CPPModule {
+    pub fn attach(process: &Process) -> Result<Self, Box<dyn Error>> {
+        let module = il2cpp::Module::attach_auto_detect(process).ok_or(SimpleError::from("cant auto attach il2cpp module"))?;
+        Ok(IL2CPPModule { module })
+    }
+}
+
+impl UnityModule for IL2CPPModule {
+    fn get_component_name(&self, process: &Process, scene_manager: &SceneManager, component: &Component) -> Result<String, Box<dyn Error>> {
+        // let object = component.get_mono_object(process, scene_manager)
+        //     .map_err(|_| SimpleError::from("cant get mono object"))?;
+        //
+        // let class = object.get_class(process, &self.module)
+        //     .map_err(|_| SimpleError::from("cant get mono object class"))?;
+        //
+        // let name = safe_cstr_to_str(class.get_name::<128>(process, &self.module))
+        //     .map_err(|_| SimpleError::from("cant get mono class name"))?;
+        // Ok(name)
+        todo!()
+    }
+
+    fn get_class(&self, process: &Process, class_name: &str) -> Result<Address, Box<dyn Error>> {
+        let image = self.module.get_default_image(process).ok_or(SimpleError::from("cant get default image"))?;
+
+        Ok(image.get_class(process, &self.module, class_name).ok_or(SimpleError::from("cant get class"))?.class)
+    }
+
+    fn get_field_offset(&self, process: &Process, class: Address, field_name: &str) -> Result<u32, Box<dyn Error>> {
+        let class = il2cpp::Class { class };
+        Ok(class.get_field_offset(process, &self.module, field_name).ok_or(SimpleError::from("couldnt get field offset"))?)
+    }
+
+    fn get_component_field<T: CheckedBitPattern>(&self, process: &Process, scene_manager: &SceneManager, component: &Component, field_name: &str) -> Result<T, Box<dyn Error>> {
+        // let object = component.get_mono_object(process, scene_manager)
+        //     .map_err(|_| SimpleError::from("cant get mono object"))?;
+        //
+        // let class = object.get_class(process, &self.module)
+        //     .map_err(|_| SimpleError::from("cant get mono object class"))?;
+        //
+        // let offset = class.get_field_offset(process, &self.module, field_name).ok_or(SimpleError::from("couldnt get field offset"))?;
+        //
+        // Ok(process.read::<T>(object.address + offset).map_err(|_| SimpleError::from("cant read field value"))?)
+        todo!()
     }
 }
 
@@ -147,21 +198,21 @@ fn log_transform<T: UnityModule>(process: &Process, game: &Game<T>, transform: T
             print_message(&format!("{indent}COMPONENTS:"));
             components.enumerate().for_each(|(i, component)| {
                 print_message(&format!("{indent}  COMPONENT {i}: {component:?}"));
-                let name = game.module.get_component_name(process, &game.scene_manager, &component);
-
-                if let Ok(name) = name {
-                    print_message(&format!("{indent}    NAME (MONO): {name:?}"));
-
-                    if name == "RestartScript" {
-                        print_message(&format!("{indent}    FIELDS:"));
-
-                        let special = game.module.get_component_field::<i32>(process, &game.scene_manager, &component, "special");
-                        print_message(&format!("{indent}      SPECIAL: {special:X?}"));
-
-                        let fps = game.module.get_component_field::<i32>(process, &game.scene_manager, &component, "FPS");
-                        print_message(&format!("{indent}      FPS: {fps:?}"));
-                    }
-                }
+                // let name = game.module.get_component_name(process, &game.scene_manager, &component);
+                //
+                // if let Ok(name) = name {
+                //     print_message(&format!("{indent}    NAME (MONO): {name:?}"));
+                //
+                //     if name == "RestartScript" {
+                //         print_message(&format!("{indent}    FIELDS:"));
+                //
+                //         let special = game.module.get_component_field::<i32>(process, &game.scene_manager, &component, "special");
+                //         print_message(&format!("{indent}      SPECIAL: {special:X?}"));
+                //
+                //         let fps = game.module.get_component_field::<i32>(process, &game.scene_manager, &component, "FPS");
+                //         print_message(&format!("{indent}      FPS: {fps:?}"));
+                //     }
+                // }
             })
         }
     }
@@ -223,7 +274,7 @@ async fn on_attach(process: &Process, settings: &mut Settings) -> Result<(), Box
     Ok(())
 }
 
-async fn try_load<'a>(process: &'a Process) -> Result<Game<MonoModule>, Box<dyn Error>> {
+async fn try_load<'a>(process: &'a Process) -> Result<Game<IL2CPPModule>, Box<dyn Error>> {
     print_message("  => loading scene manager");
 
     let sm = SceneManager::attach(process)
@@ -231,7 +282,7 @@ async fn try_load<'a>(process: &'a Process) -> Result<Game<MonoModule>, Box<dyn 
     let sm = Rc::new(sm);
     print_message("  => scene manager loaded, loading unity module");
 
-    let module = MonoModule::attach(process)?;
+    let module = IL2CPPModule::attach(process)?;
 
     Ok(Game { scene_manager: sm, module })
 }
