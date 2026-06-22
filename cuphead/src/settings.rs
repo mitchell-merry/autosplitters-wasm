@@ -129,4 +129,13 @@ pub struct Settings {
 
     /// Split on the gauntlet
     pub split_chess: ChessPieceSetting,
+
+    /// Split on entering any level
+    pub split_enter_level: bool,
+
+    /// Split on entering the shop
+    pub split_enter_shop: bool,
+
+    /// Split on leaving Elder Kettle
+    pub split_leaving_kettle: bool,
 }
