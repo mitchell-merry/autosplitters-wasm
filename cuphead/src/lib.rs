@@ -6,7 +6,7 @@ mod settings;
 mod util;
 
 use crate::enums::Mode;
-use crate::memory::Memory;
+use crate::memory::{Memory, Offsets};
 use crate::scenes::Scene;
 use crate::settings::Settings;
 use crate::util::format_seconds;
@@ -25,6 +25,7 @@ use std::error::Error;
 use std::rc::Rc;
 use std::time::Duration;
 use std::time::Instant;
+use asr::game_engine::unity::scene_manager;
 
 asr::async_main!(stable);
 
@@ -122,7 +123,20 @@ async fn try_load<'a>(process: &'a Process) -> Result<Cuphead<'a>, Box<dyn Error
     let unity = UnityImage::new(process, module, image);
     print_message("  => default image loaded, loading scene manager");
 
-    let sm = SceneManager::attach(process)
+    let sm = SceneManager::attach_with_offsets(process, Some(&scene_manager::Offsets {
+        scene_count: 0x18,
+        active_scene: 0x48,
+        dont_destroy_on_load_scene: 0x70,
+        asset_path: 0x10,
+        build_index: 0x98,
+        root_storage_container: 0xB8,
+        game_object: 0x30,
+        game_object_name: 0x68,
+        game_object_activeself: 0x5E,
+        game_object_activeinhierarchy: 0x5F,
+        scripting_object_handle: 0x28,
+        children_pointer: 0x70,
+    }))
         .ok_or(SimpleError::from("failed to attach to asr scene manager"))?;
     let sm = Rc::new(sm);
     print_message("  => scene manager loaded, loading pointer paths");
@@ -271,17 +285,17 @@ async fn tick<'a>(
         );
         set_variable(
             "devil bad ending active",
-            &format!("{:?}", memory.devil_bad_ending_active.current()?),
+            &format!("{:?}", memory.devil_bad_ending_active.current()),
         );
         set_variable(
             "difficulty ticker started counting",
-            &format!("{:?}", memory.difficulty_ticker_started_counting.current()?),
+            &format!("{:?}", memory.difficulty_ticker_started_counting.current()),
         );
         set_variable(
             "difficulty ticker finished counting",
             &format!(
                 "{:?}",
-                memory.difficulty_ticker_finished_counting.current()?
+                memory.difficulty_ticker_finished_counting.current()
             ),
         );
         set_variable(

@@ -1,7 +1,7 @@
 use crate::error::SimpleError;
 use crate::watchers::{ValueGetter, Watcher};
-use asr::game_engine::unity::mono::{Class, Image, Module, UnityPointer};
-use asr::game_engine::unity::scene_manager::{CppGameObject, Scene, SceneManager};
+use asr::game_engine::unity::mono::{Class, Image, Module, UnityPointer, Object};
+use asr::game_engine::unity::scene_manager::{GameObject, Scene, SceneManager};
 use asr::{print_message, Address, Process};
 use bytemuck::CheckedBitPattern;
 use std::cell::{Cell, RefCell};
@@ -122,7 +122,7 @@ pub struct GameObjectActivePath<'a> {
     root_object_name: &'static str,
     path: &'static [&'static str],
 
-    cached_object: Cell<Option<CppGameObject>>,
+    cached_object: Cell<Option<GameObject>>,
 }
 
 impl<'a> GameObjectActivePath<'a> {
@@ -217,7 +217,7 @@ pub struct MonoBehaviourFieldPath<'a, T: CheckedBitPattern> {
 
     inner: RefCell<MBFPInternal>,
 
-    cached_component: Cell<Option<Address>>,
+    cached_component: Cell<Option<Object>>,
 }
 
 impl<'a, T: CheckedBitPattern> MonoBehaviourFieldPath<'a, T> {
@@ -259,7 +259,7 @@ impl<'a, T: CheckedBitPattern> ValueGetter<T> for MonoBehaviourFieldPath<'a, T> 
             .inspect_err(|_| self.cached_component.set(None))?;
 
         // this is pretty jank, but we're using the cached address if one exists
-        let mut current_object = match self.cached_component.take() {
+        let mono_object = match self.cached_component.take() {
             Some(component) => component,
             None => {
                 let transform = active_scene
@@ -275,24 +275,25 @@ impl<'a, T: CheckedBitPattern> ValueGetter<T> for MonoBehaviourFieldPath<'a, T> 
                     .get_game_object(self.process, &self.scene_manager)
                     .map_err(|_| SimpleError::from("couldnt get game_object"))?;
 
+                // TODO this keeps printing no error
                 print_message(&format!("game_object {:?}", game_object));
 
                 game_object
-                    .get_class(self.process, &self.scene_manager, self.component_type_name)
-                    .map_err(|_| SimpleError::from("couldnt find component in game object"))?
+                    .get_component_mono_object(self.process, &self.scene_manager, &self.module, self.component_type_name)
+                    .map_err(|_| SimpleError::from("couldnt find component mono object in game object"))?
             }
         };
 
-        // starts as the component
-        self.cached_component.set(Some(current_object));
-        let component = current_object;
+        let base_mono_object_address = mono_object.address;
+        let mut current_address = mono_object.address;
+        self.cached_component.set(Some(mono_object));
 
         let mut inner = self.inner.borrow_mut();
         for i in 0..inner.resolved_offsets {
-            current_object = self
+            current_address = self
                 .process
                 .read_pointer(
-                    current_object + inner.offsets[i],
+                    current_address + inner.offsets[i],
                     self.module.get_pointer_size(),
                 )
                 .map_err(|_| {
@@ -301,7 +302,9 @@ impl<'a, T: CheckedBitPattern> ValueGetter<T> for MonoBehaviourFieldPath<'a, T> 
         }
 
         for i in inner.resolved_offsets..inner.depth {
-            let current_class = Class::from_object(self.process, &self.module, current_object)
+            let object = Object { address: current_address };
+
+            let current_class = object.get_class(self.process, &self.module)
                 .map_err(|_| SimpleError::from("couldnt get class from object"))?;
 
             let offset = current_class
@@ -311,18 +314,18 @@ impl<'a, T: CheckedBitPattern> ValueGetter<T> for MonoBehaviourFieldPath<'a, T> 
             inner.offsets[i] = offset as _;
             inner.resolved_offsets += 1;
 
-            current_object = self
+            current_address = self
                 .process
-                .read_pointer(current_object + offset, self.module.get_pointer_size())
+                .read_pointer(current_address + offset, self.module.get_pointer_size())
                 .map_err(|_| SimpleError::from("couldnt dereference with retrieved offset"))?;
         }
 
         let p = &inner.offsets[..inner.depth];
 
         self.process
-            .read_pointer_path::<T>(component, self.module.get_pointer_size(), p)
+            .read_pointer_path::<T>(base_mono_object_address, self.module.get_pointer_size(), p)
             .map_err(|_| {
-                SimpleError::from(&format!("couldnt read final bit {}, {:X?}", component, p)).into()
+                SimpleError::from(&format!("couldnt read final bit {}, {:X?}", base_mono_object_address, p)).into()
             })
     }
 }

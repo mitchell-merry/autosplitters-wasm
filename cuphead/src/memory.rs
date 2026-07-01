@@ -177,7 +177,7 @@ impl<'a> Memory<'a> {
                 "WinScreenTicker",
                 &["startedCounting"],
             )?)
-            .default(),
+            ,
             difficulty_ticker_finished_counting: Watcher::from(MonoBehaviourFieldPath::init(
                 unity.process,
                 unity.module.clone(),
@@ -188,7 +188,7 @@ impl<'a> Memory<'a> {
                 "WinScreenTicker",
                 &["<FinishedCounting>k__BackingField"],
             )?)
-            .default(),
+            ,
         })
     }
 
