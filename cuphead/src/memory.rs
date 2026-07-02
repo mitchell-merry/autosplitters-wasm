@@ -68,70 +68,69 @@ impl<'a> Memory<'a> {
                 0,
                 &["_instance", "doneLoadingSceneAsync"],
             ))
-            .default_given(true),
-            insta: Watcher::from(unity.path("SceneLoader", 0, &["_instance", "camera"])).default(),
+            .default_on_fail_to(true),
+            insta: Watcher::from(unity.path("SceneLoader", 0, &["_instance", "camera"])).default_on_fail(),
             scene: Watcher::from(SceneGetter::from(unity.path(
                 "SceneLoader",
                 0,
                 &["<SceneName>k__BackingField", offsets.string_contents],
             )))
-            .default_given(Scene::Invalid),
-
-            in_game: Watcher::from(unity.path("PlayerData", 0, &["inGame"])).default_given(false),
+            .default_on_fail_to(Scene::Invalid),
+            in_game: Watcher::from(unity.path("PlayerData", 0, &["inGame"])).default_on_fail_to(false),
             level: Watcher::from(unity.path("Level", 0, &["<PreviousLevel>k__BackingField"]))
-                .default(),
+                .default_on_fail(),
             level_won: Watcher::from(unity.path("Level", 0, &["<Won>k__BackingField"]))
-                .default_given(false),
+                .default_on_fail_to(false),
             level_ending: Watcher::from(unity.path(
                 "Level",
                 0,
                 &["<Current>k__BackingField", "<Ending>k__BackingField"],
             ))
-            .default_given(false),
+            .default_on_fail_to(false),
             level_time: Watcher::from(unity.path(
                 "Level",
                 0,
                 &["<Current>k__BackingField", "<LevelTime>k__BackingField"],
             ))
-            .default_given(0f32),
+            .default_on_fail_to(0f32),
             level_grade: Watcher::from(unity.path("Level", 0, &["<Grade>k__BackingField"]))
-                .default(),
+                .default_on_fail(),
             level_difficulty: Watcher::from(unity.path(
                 "Level",
                 0,
                 &["<CurrentMode>k__BackingField"],
             ))
-            .default(),
+            .default_on_fail(),
             lsd_time: Watcher::from(unity.path(
                 "Level",
                 0,
                 &["<ScoringData>k__BackingField", "time"],
             ))
-            .default(),
+            .default_on_fail(),
             lsd_hits: Watcher::from(unity.path(
                 "Level",
                 0,
                 &["<ScoringData>k__BackingField", "numTimesHit"],
             ))
-            .default(),
+            .default_on_fail(),
             lsd_parries: Watcher::from(unity.path(
                 "Level",
                 0,
                 &["<ScoringData>k__BackingField", "numParries"],
             ))
-            .default(),
+            .default_on_fail(),
             lsd_super_meter: Watcher::from(unity.path(
                 "Level",
                 0,
                 &["<ScoringData>k__BackingField", "superMeterUsed"],
             ))
-            .default(),
+            .default_on_fail(),
             lsd_coins: Watcher::from(unity.path(
                 "Level",
                 0,
                 &["<ScoringData>k__BackingField", "coinsCollected"],
             ))
-            .default(),
+            .default_on_fail(),
             lsd_use_coins_instead: Watcher::from(unity.path(
                 "Level",
                 0,
@@ -140,25 +139,25 @@ impl<'a> Memory<'a> {
                     "useCoinsInsteadOfSuperMeter",
                 ],
             ))
-            .default(),
+            .default_on_fail(),
             kd_spaces_moved: Watcher::from(unity.path(
                 "DicePalaceMainLevelGameInfo",
                 0,
                 &["PLAYER_SPACES_MOVED"],
             ))
-            .default(),
+            .default_on_fail(),
             level_is_dice: Watcher::from(unity.path(
                 "Level",
                 0,
                 &["<IsDicePalace>k__BackingField"],
             ))
-            .default(),
+            .default_on_fail(),
             level_is_dice_main: Watcher::from(unity.path(
                 "Level",
                 0,
                 &["<IsDicePalaceMain>k__BackingField"],
             ))
-            .default(),
+            .default_on_fail(),
             devil_bad_ending_active: Watcher::from(GameObjectActivePath::new(
                 unity.process,
                 scene_manager.clone(),
@@ -166,7 +165,7 @@ impl<'a> Memory<'a> {
                 "Cutscene",
                 &["devil_cinematic_bad_ending_transition_0001"],
             ))
-            .default(),
+            .default_on_fail(),
             difficulty_ticker_started_counting: Watcher::from(MonoBehaviourFieldPath::init(
                 unity.process,
                 unity.module.clone(),

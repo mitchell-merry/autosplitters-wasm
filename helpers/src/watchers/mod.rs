@@ -22,6 +22,14 @@ impl<T: Copy> ValueGetter<T> for T {
     }
 }
 
+#[derive(Clone, Default)]
+pub enum FailBehaviour<T: Clone> {
+    #[default]
+    Fail,
+    UseOld,
+    Default(T),
+}
+
 /// A Watcher is used for fetching values, and comparing those values against old versions of that
 /// value.
 ///
@@ -39,7 +47,7 @@ pub struct Watcher<'a, T: Clone> {
     source: Box<dyn ValueGetter<T> + 'a>,
     current: OnceCell<T>,
     old: Option<T>,
-    default: Option<T>,
+    on_fail: FailBehaviour<T>,
 }
 
 impl<'a, T: Clone> Watcher<'a, T> {
@@ -48,7 +56,7 @@ impl<'a, T: Clone> Watcher<'a, T> {
             source,
             current: OnceCell::new(),
             old: None,
-            default: None,
+            on_fail: Default::default(),
         }
     }
 
@@ -64,9 +72,13 @@ impl<'a, T: Clone> Watcher<'a, T> {
                 };
 
                 // Only return the error we got if we have no default
-                match self.default.clone() {
-                    Some(default) => Ok(default),
-                    None => Err(err),
+                match self.on_fail.clone() {
+                    FailBehaviour::Fail => Err(err),
+                    FailBehaviour::UseOld => match self.old.clone() {
+                        None => Err(err),
+                        Some(value) => Ok(value),
+                    },
+                    FailBehaviour::Default(default) => Ok(default),
                 }
             })
             .cloned()
@@ -98,12 +110,21 @@ impl<'a, T: Clone> Watcher<'a, T> {
     /// `current()`.
     ///
     /// This swallows the error from `current()`, but may be desirable over dealing with error cases.
-    pub fn default_given(self, default: T) -> Self {
+    pub fn default_on_fail_to(self, default: T) -> Self {
         Watcher {
             source: self.source,
             current: self.current,
             old: self.old,
-            default: Some(default),
+            on_fail: FailBehaviour::Default(default),
+        }
+    }
+
+    pub fn use_old_on_fail(self) -> Self {
+        Watcher {
+            source: self.source,
+            current: self.current,
+            old: self.old,
+            on_fail: FailBehaviour::UseOld,
         }
     }
 }
@@ -151,13 +172,13 @@ impl<'a, T: Clone + PartialEq> Watcher<'a, T> {
 impl<'a, T: CheckedBitPattern + Default> Watcher<'a, T> {
     /// Use the default value of `T` for the default when `current()` fails to retrieve a new value.
     ///
-    /// See `default_given` for more documentation.
-    pub fn default(self) -> Self {
+    /// See `default_on_fail_to` for more documentation.
+    pub fn default_on_fail(self) -> Self {
         Watcher {
             source: self.source,
             current: self.current,
             old: self.old,
-            default: Some(T::default()),
+            on_fail: FailBehaviour::Default(T::default()),
         }
     }
 }

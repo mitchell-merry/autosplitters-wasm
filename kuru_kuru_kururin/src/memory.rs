@@ -98,14 +98,14 @@ impl<'a> Watchers<'a> {
                 .into();
 
         Watchers {
-            world: world.default(),
-            sub_level: sub_level.default(),
-            game_mode: game_mode.default(),
-            time: time.default(),
-            flags: flags.default(),
-            input_flags: input_flags.default(),
-            state: state.default(),
-            substate: substate.default(),
+            world: world.default_on_fail(),
+            sub_level: sub_level.default_on_fail(),
+            game_mode: game_mode.default_on_fail(),
+            time: time.default_on_fail(),
+            flags: flags.default_on_fail(),
+            input_flags: input_flags.default_on_fail(),
+            state: state.default_on_fail(),
+            substate: substate.default_on_fail(),
         }
     }
 

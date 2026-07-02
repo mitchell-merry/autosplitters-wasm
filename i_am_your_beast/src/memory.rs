@@ -1,9 +1,9 @@
 use crate::enums::{LevelState, SceneTransitionState};
 use asr::game_engine::unity::scene_manager::SceneManager;
-use helpers_iayb::watchers::unity::{
+use helpers::watchers::unity::{
     ActiveSceneNameGetter, GameObjectActivePath, MonoBehaviourFieldPath, StringMatch, UnityImage,
 };
-use helpers_iayb::watchers::Watcher;
+use helpers::watchers::Watcher;
 use std::error::Error;
 use std::rc::Rc;
 
@@ -117,8 +117,8 @@ impl<'a> Memory<'a> {
                 ],
                 "UILevelCompleteTimeScoreBar",
                 &["currentTime"],
-            )?)
-            .default_on_fail(),
+            )?),
+            // .default_on_fail(),
             timer_started: Watcher::from(unity.path(
                 "GameManager",
                 0,

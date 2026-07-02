@@ -1,4 +1,4 @@
-extern crate helpers_iayb;
+extern crate helpers;
 mod enums;
 mod memory;
 mod settings;
@@ -8,14 +8,14 @@ use crate::memory::Memory;
 use crate::settings::Settings;
 use asr::future::retry;
 use asr::game_engine::unity::mono::Module;
-use asr::game_engine::unity::scene_manager::SceneManager;
+use asr::game_engine::unity::scene_manager::{Offsets, SceneManager};
 use asr::settings::Gui;
 use asr::timer::{
     pause_game_time, reset, resume_game_time, set_game_time, set_variable, split, state, TimerState,
 };
 use asr::{future::next_tick, print_message, timer, Process};
-use helpers_iayb::error::SimpleError;
-use helpers_iayb::watchers::unity::UnityImage;
+use helpers::error::SimpleError;
+use helpers::watchers::unity::UnityImage;
 use std::error::Error;
 use std::rc::Rc;
 
@@ -70,7 +70,7 @@ struct IAmYourBeast<'a> {
 }
 
 async fn on_attach(process: &Process, settings: &mut Settings) -> Result<(), Box<dyn Error>> {
-    let mut iamyourbeast = helpers_iayb::try_load::wait_try_load_millis::<IAmYourBeast, _, _>(
+    let mut iamyourbeast = helpers::try_load::wait_try_load_millis::<IAmYourBeast, _, _>(
         async || {
             print_message("  => loading module");
             let module = Module::attach_auto_detect(process)
@@ -88,7 +88,20 @@ async fn on_attach(process: &Process, settings: &mut Settings) -> Result<(), Box
             let unity = UnityImage::new(process, module, image);
             print_message("  => image loaded, loading scene manager");
 
-            let sm = SceneManager::attach(process)
+            let sm = SceneManager::attach_with_offsets(process, Some(&Offsets {
+                scene_count: 0x18,
+                active_scene: 0x48,
+                dont_destroy_on_load_scene: 0x70,
+                asset_path: 0x10,
+                build_index: 0x98,
+                root_storage_container: 0xF0,
+                game_object: 0x30,
+                game_object_name: 0x60,
+                game_object_activeself: 0x56,
+                game_object_activeinhierarchy: 0x57,
+                scripting_object_handle: 0x18,
+                children_pointer: 0x70,
+            }))
                 .ok_or(SimpleError::from("failed to attach to asr scene manager"))?;
             let sm = Rc::new(sm);
             print_message("  => scene manager loaded, loading pointer paths");
@@ -132,17 +145,17 @@ async fn tick<'a>(
     let old_scene = memory.scene.old().unwrap_or("".to_string());
     let scene = memory.scene.current()?;
     let measured_state = &mut iamyourbeast.measured_state;
-    let current_ui_time = (memory.ui_level_complete_time.current()? * 100f32).round() / 100f32;
 
     set_variable("combat time", &format!("{}", memory.combat_time.current()?));
     set_variable(
         "ui_level_complete_time",
         &format!("{:?}", memory.ui_level_complete_time.current()?),
     );
-    set_variable(
-        "ui_level_complete_time rounded",
-        &format!("{current_ui_time}"),
-    );
+    let current_ui_time = (memory.ui_level_complete_time.current()? * 100f32).round() / 100f32;
+    // set_variable(
+    //     "ui_level_complete_time rounded",
+    //     &format!("{current_ui_time}"),
+    // );
     set_variable("level", &format!("{:?}", memory.level.current()?));
     set_variable(
         "level_state",
