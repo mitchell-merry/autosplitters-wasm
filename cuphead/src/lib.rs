@@ -124,18 +124,18 @@ async fn try_load<'a>(process: &'a Process) -> Result<Cuphead<'a>, Box<dyn Error
     print_message("  => default image loaded, loading scene manager");
 
     let sm = SceneManager::attach_with_offsets(process, Some(&scene_manager::Offsets {
-        scene_count: 0x18,
-        active_scene: 0x48,
-        dont_destroy_on_load_scene: 0x70,
+        scene_count: 0x10,
+        active_scene: 0x24,
+        dont_destroy_on_load_scene: 0x40,
         asset_path: 0x10,
-        build_index: 0x98,
-        root_storage_container: 0xB8,
-        game_object: 0x30,
-        game_object_name: 0x68,
-        game_object_activeself: 0x5E,
-        game_object_activeinhierarchy: 0x5F,
-        scripting_object_handle: 0x28,
-        children_pointer: 0x70,
+        build_index: 0x70,
+        root_storage_container: 0x90,
+        game_object: 0x1C,
+        game_object_name: 0x3C,
+        game_object_activeself: 0x32,
+        game_object_activeinhierarchy: 0x33,
+        scripting_object_handle: 0x18,
+        children_pointer: 0x50,
     }))
         .ok_or(SimpleError::from("failed to attach to asr scene manager"))?;
     let sm = Rc::new(sm);
