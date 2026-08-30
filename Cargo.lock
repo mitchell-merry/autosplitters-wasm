@@ -20,6 +20,7 @@ checksum = "f02882884d3e1bc524fb12c79f107f6ad0e1cfd498c536ffb494301740995dfe"
 [[package]]
 name = "asr"
 version = "0.1.0"
+source = "git+https://github.com/mitchell-merry/asr?branch=transform-refactor#cea4ad0fb6b7716c8918a927f21aa41be7e35110"
 dependencies = [
  "arrayvec",
  "asr-derive",
@@ -32,6 +33,7 @@ dependencies = [
 [[package]]
 name = "asr-derive"
 version = "0.1.0"
+source = "git+https://github.com/mitchell-merry/asr?branch=transform-refactor#cea4ad0fb6b7716c8918a927f21aa41be7e35110"
 dependencies = [
  "heck 0.4.1",
  "proc-macro2",
