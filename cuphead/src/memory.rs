@@ -4,12 +4,11 @@ use crate::enums::Mode;
 use crate::scenes::{Scene, SceneGetter};
 use asr::game_engine::unity::scene_manager::SceneManager;
 use asr::{Address64, PointerSize};
-use helpers::watchers::unity::{
-    GameObjectActivePath, MonoBehaviourFieldPath, StringMatch, UnityImage,
-};
+use helpers::watchers::unity::{GameObjectActivePath, InstanceClassNameGetter, MonoBehaviourFieldPath, StringMatch, UnityImage};
 use helpers::watchers::Watcher;
 use std::error::Error;
 use std::rc::Rc;
+use asr::string::ArrayCString;
 
 pub struct Offsets {
     pub string_contents: &'static str,
@@ -35,6 +34,7 @@ pub struct Memory<'a> {
     pub done_loading: Watcher<'a, bool>,
     pub insta: Watcher<'a, Address64>,
     pub scene: Watcher<'a, Scene>,
+    pub scene_context_class_name: Watcher<'a, ArrayCString<128>>,
     pub in_game: Watcher<'a, bool>,
     pub level: Watcher<'a, Levels>,
     pub level_won: Watcher<'a, bool>,
@@ -76,6 +76,7 @@ impl<'a> Memory<'a> {
                 &["<SceneName>k__BackingField", offsets.string_contents],
             )))
             .default_on_fail_to(Scene::Invalid),
+            scene_context_class_name: Watcher::from(InstanceClassNameGetter::new(unity.path("SceneLoader", 0, &["CurrentContext"]))).default_on_fail(),
             in_game: Watcher::from(unity.path("PlayerData", 0, &["inGame"])).default_on_fail_to(false),
             level: Watcher::from(unity.path("Level", 0, &["<PreviousLevel>k__BackingField"]))
                 .default_on_fail(),
@@ -195,6 +196,7 @@ impl<'a> Memory<'a> {
         self.done_loading.invalidate();
         self.insta.invalidate();
         self.scene.invalidate();
+        self.scene_context_class_name.invalidate();
         self.in_game.invalidate();
         self.level.invalidate();
         self.level_won.invalidate();

@@ -2,12 +2,14 @@ use crate::error::SimpleError;
 use crate::watchers::{ValueGetter, Watcher};
 use asr::game_engine::unity::mono::{Class, Image, Module, UnityPointer, Object};
 use asr::game_engine::unity::scene_manager::{GameObject, Scene, SceneManager};
-use asr::{print_message, Address, Process};
+use asr::{print_message, Address, Address64, Process};
 use bytemuck::CheckedBitPattern;
 use std::cell::{Cell, RefCell};
 use std::error::Error;
 use std::marker::PhantomData;
 use std::rc::Rc;
+use asr::game_engine::unity::mono;
+use asr::string::ArrayCString;
 
 #[cfg(feature = "unity")]
 #[derive(Clone)]
@@ -112,6 +114,37 @@ fn get_scene_if_active(
     }
 
     Ok(active_scene)
+}
+
+pub struct InstanceClassNameGetter<'a> {
+    path: UnityPointerPath<'a>,
+}
+
+
+impl<'a> InstanceClassNameGetter<'a> {
+    pub fn new(
+        path: UnityPointerPath<'a>,
+    ) -> Self {
+        InstanceClassNameGetter {
+            path,
+        }
+    }
+}
+
+impl<'a> From<InstanceClassNameGetter<'a>> for Watcher<'a, ArrayCString<128>> {
+    fn from(value: InstanceClassNameGetter<'a>) -> Self {
+        Watcher::new(Box::new(value))
+    }
+}
+
+impl<'a> ValueGetter<ArrayCString<128>> for InstanceClassNameGetter<'a> {
+    fn get(&self) -> Result<ArrayCString<128>, Box<dyn Error>> {
+        let instance: Address64 = self.path.get().map_err(|_| SimpleError::from("failed to get instance"))?;
+        let obj = mono::Object { address: Address::from(instance) };
+        let class = obj.get_class(self.path.process, &self.path.module).map_err(|_| SimpleError::from("failed to get class of instance"))?;
+        Ok(class.get_name::<128>(self.path.process, &self.path.module)
+            .map_err(|_| SimpleError::from("failed to get class name"))?)
+    }
 }
 
 pub struct GameObjectActivePath<'a> {

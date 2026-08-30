@@ -64,6 +64,12 @@ pub struct Settings {
     /// Use in-game-time, start time on each level attempt, reset when a level is reset or is left.
     pub individual_level_mode: bool,
 
+    // /// Full Chess Gauntlet IL mode (requires IL mode enabled)
+    // ///
+    // /// Disables auto-reset in between chess gauntlet levels.
+    // #[default = true]
+    // pub il_full_gauntlet_mode: bool,
+
     /// Choose how to split on level complete (ignored when individual level mode is on)
     ///
     /// This only matters for levels which have a scorecard.

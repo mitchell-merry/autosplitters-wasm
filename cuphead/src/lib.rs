@@ -5,7 +5,7 @@ mod scenes;
 mod settings;
 mod util;
 
-use crate::enums::Mode;
+use crate::enums::{LevelType, Mode};
 use crate::memory::{Memory, Offsets};
 use crate::scenes::Scene;
 use crate::settings::Settings;
@@ -26,6 +26,7 @@ use std::rc::Rc;
 use std::time::Duration;
 use std::time::Instant;
 use asr::game_engine::unity::scene_manager;
+use helpers::watchers::ValueGetter;
 
 asr::async_main!(stable);
 
@@ -39,6 +40,8 @@ const PROCESS_NAMES: [&str; 2] = [
 const STAR_SKIP_TIME_FIRST: Duration = Duration::from_millis(100);
 const STAR_SKIP_TIME_SECOND: Duration = Duration::from_millis(600);
 const STAR_SKIP_TIME_THIRD: Duration = Duration::from_millis(1100);
+
+const SCENE_CONTEXT_GAUNTLET: &str = "GauntletContext";
 
 #[derive(Default)]
 struct MeasuredState {
@@ -68,7 +71,7 @@ async fn main() {
             .until_closes(async {
                 let res = on_attach(&process, &mut settings).await;
                 if let Err(err) = res {
-                    print_message(&format!("error occuring on_attach: {}", err));
+                    print_message(&format!("error occurring on_attach: {}", err));
                 } else {
                     print_message("detached from process");
                 }
@@ -176,12 +179,18 @@ async fn tick<'a>(
         measured_state.level_updated_lsd = true
     }
 
+    let time_reset = memory.level_time.old().is_some_and(|t| t > 0f32) && memory.level_time.current()? == 0f32;
+    set_variable("time_reset", &format!("{}", time_reset));
+    set_variable("level type", &format!("{:?}", memory.level.current()?.get_type()));
     let level_is_resetting = if memory.level_is_dice.current()? {
         memory.kd_spaces_moved.current()? == 0
             && memory.is_loading()?
             && memory.done_loading.old().is_some_and(|l| !l)
+    } else if memory.scene_context_class_name.current_string()? == SCENE_CONTEXT_GAUNTLET {
+        // Prevent resetting between the levels
+        time_reset && (scene == Scene::LevelChessPawn || scene == Scene::LevelChessCastle)
     } else {
-        memory.level_time.old().is_some_and(|t| t > 0f32) && memory.level_time.current()? == 0f32
+        time_reset
     };
 
     if level_is_resetting {
@@ -247,6 +256,8 @@ async fn tick<'a>(
     // For debugging
     #[cfg(debug_assertions)]
     {
+        set_variable("scene context name", &format!("{:?}", memory.scene_context_class_name.current_string()?));
+        set_variable("scene enum", &format!("{:?}", scene));
         set_variable("previous scene", &previous_scene.to_string());
         set_variable(
             "last seen scene",
