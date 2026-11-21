@@ -1,6 +1,40 @@
+use crate::scenes::Scene;
 use crate::settings::{ChessPieceSetting, Settings};
 use bytemuck::CheckedBitPattern;
+use once_cell::sync::Lazy;
 use std::collections::HashSet;
+
+static TUTORIAL_TARGETS: Lazy<HashSet<Scene>> =
+    Lazy::new(|| HashSet::from([Scene::LevelElderKettle, Scene::IsleOne]));
+
+static CHALICE_TUTORIAL_TARGETS: Lazy<HashSet<Scene>> =
+    Lazy::new(|| HashSet::from([Scene::IsleDLC]));
+
+static MAUSOLEUM_TARGETS: Lazy<HashSet<Scene>> = Lazy::new(|| {
+    HashSet::from([
+        Scene::IsleOne,
+        Scene::IsleTwo,
+        Scene::IsleThree,
+        Scene::IsleDLC,
+    ])
+});
+
+static GRAVEYARD_TARGETS: Lazy<HashSet<Scene>> = Lazy::new(|| HashSet::from([Scene::IsleDLC]));
+
+static CHESS_PAWN_TARGETS: Lazy<HashSet<Scene>> =
+    Lazy::new(|| HashSet::from([Scene::LevelChessCastle, Scene::LevelChessKnight]));
+
+static CHESS_KNIGHT_TARGETS: Lazy<HashSet<Scene>> =
+    Lazy::new(|| HashSet::from([Scene::LevelChessCastle, Scene::LevelChessBishop]));
+
+static CHESS_BISHOP_TARGETS: Lazy<HashSet<Scene>> =
+    Lazy::new(|| HashSet::from([Scene::LevelChessCastle, Scene::LevelChessRook]));
+
+static CHESS_ROOK_TARGETS: Lazy<HashSet<Scene>> =
+    Lazy::new(|| HashSet::from([Scene::LevelChessCastle, Scene::LevelChessQueen]));
+
+static CHESS_QUEEN_TARGETS: Lazy<HashSet<Scene>> =
+    Lazy::new(|| HashSet::from([Scene::LevelChessCastle]));
 
 // these names come from code directly
 #[derive(CheckedBitPattern, Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -85,16 +119,25 @@ pub enum Levels {
 }
 
 impl Levels {
-    pub fn split_on_scene_transition_to(&self) -> Option<(&str, HashSet<&str>)> {
+    pub fn split_on_scene_transition_to(&self) -> Option<(Scene, &'static HashSet<Scene>)> {
         match self {
-            Levels::Tutorial => Some((
-                "scene_level_tutorial",
-                HashSet::from(["scene_level_house_elder_kettle", "scene_map_world_1"]),
-            )),
-            Levels::ChaliceTutorial => Some((
-                "scene_level_chalice_tutorial",
-                HashSet::from(["scene_map_world_DLC"]),
-            )),
+            Levels::Tutorial => Some((Scene::LevelTutorial, &TUTORIAL_TARGETS)),
+            Levels::ChaliceTutorial => {
+                Some((Scene::LevelChaliceTutorial, &CHALICE_TUTORIAL_TARGETS))
+            }
+            _ => None,
+        }
+    }
+
+    pub fn split_on_won_scene_transition_to(&self) -> Option<(Scene, &'static HashSet<Scene>)> {
+        match self {
+            Levels::Mausoleum => Some((Scene::LevelMausoleum, &MAUSOLEUM_TARGETS)),
+            Levels::Graveyard => Some((Scene::LevelGraveyard, &GRAVEYARD_TARGETS)),
+            Levels::ChessPawn => Some((Scene::LevelChessPawn, &CHESS_PAWN_TARGETS)),
+            Levels::ChessKnight => Some((Scene::LevelChessKnight, &CHESS_KNIGHT_TARGETS)),
+            Levels::ChessBishop => Some((Scene::LevelChessBishop, &CHESS_BISHOP_TARGETS)),
+            Levels::ChessRook => Some((Scene::LevelChessRook, &CHESS_ROOK_TARGETS)),
+            Levels::ChessQueen => Some((Scene::LevelChessQueen, &CHESS_QUEEN_TARGETS)),
             _ => None,
         }
     }

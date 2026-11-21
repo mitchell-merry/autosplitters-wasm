@@ -1,11 +1,13 @@
 extern crate helpers;
 mod enums;
 mod memory;
+mod scenes;
 mod settings;
 mod util;
 
 use crate::enums::Mode;
 use crate::memory::Memory;
+use crate::scenes::Scene;
 use crate::settings::Settings;
 use crate::util::format_seconds;
 use asr::future::retry;
@@ -33,21 +35,15 @@ const PROCESS_NAMES: [&str; 2] = [
     "Cuphead",
 ];
 
-const SCENE_CUTSCENE_INTRO: &str = "scene_cutscene_intro";
-const SCENE_CUTSCENE_KING_DICE_CONTRACT: &str = "scene_cutscene_kingdice";
-const SCENE_CUTSCENE_DEVIL: &str = "scene_cutscene_devil";
-const SCENE_TITLE_SCREEN: &str = "scene_title";
-const SCENE_SCOREBOARD: &str = "scene_win";
-
 const STAR_SKIP_TIME_FIRST: Duration = Duration::from_millis(100);
 const STAR_SKIP_TIME_SECOND: Duration = Duration::from_millis(600);
 const STAR_SKIP_TIME_THIRD: Duration = Duration::from_millis(1100);
 
 #[derive(Default)]
 struct MeasuredState {
+    last_seen_scene: Scene,
     level_updated_lsd: bool,
     lsd_time: f32,
-    was_on_scorecard: bool,
     difficulty_ticker_start_time: Option<Instant>,
     difficulty_ticker_end_time: Option<Instant>,
     star_skip_counter: i32,
@@ -154,10 +150,11 @@ async fn tick<'a>(
 ) -> Result<(), Box<dyn Error>> {
     let memory = &cuphead.memory;
     let measured_state = &mut cuphead.measured_state;
-    let scene = String::from_utf16(memory.scene.current()?.as_slice())?;
-    let previous_scene = match memory.scene.old() {
-        Some(previous_scene) => String::from_utf16(previous_scene.as_slice())?,
-        None => String::new(),
+    let scene = memory.scene.current()?;
+    let previous_scene = memory.scene.old().unwrap_or_default();
+
+    if memory.scene.changed()? {
+        measured_state.last_seen_scene = previous_scene.clone();
     };
 
     if memory.lsd_time.changed()? && memory.lsd_time.current()? != 0f32 {
@@ -182,10 +179,6 @@ async fn tick<'a>(
         measured_state.level_updated_lsd = false;
     }
 
-    if !measured_state.was_on_scorecard {
-        measured_state.was_on_scorecard = previous_scene == "scene_win" && scene != "scene_win";
-    }
-
     let time = if measured_state.level_updated_lsd {
         measured_state.lsd_time
     } else {
@@ -193,7 +186,7 @@ async fn tick<'a>(
     };
 
     let mut is_run_in_progress: bool = false;
-    if state() == TimerState::Running && scene == SCENE_SCOREBOARD {
+    if state() == TimerState::Running && scene == Scene::Scoreboard {
         monitor_star_skip(memory, measured_state)?;
     }
     if state() != TimerState::NotRunning && state() != TimerState::Unknown {
@@ -240,6 +233,11 @@ async fn tick<'a>(
     // For debugging
     #[cfg(debug_assertions)]
     {
+        set_variable("previous scene", &previous_scene.to_string());
+        set_variable(
+            "last seen scene",
+            &measured_state.last_seen_scene.to_string(),
+        );
         set_variable("insta", &format!("{}", memory.insta.current()?));
         set_variable("in game", &format!("{}", memory.in_game.current()?));
         set_variable("current level", &format!("{:?}", memory.level.current()?));
@@ -287,10 +285,6 @@ async fn tick<'a>(
             ),
         );
         set_variable(
-            "was on scorecard",
-            &format!("{}", measured_state.was_on_scorecard),
-        );
-        set_variable(
             "lsd time better",
             &format!("{:.2}", measured_state.lsd_time),
         );
@@ -305,16 +299,27 @@ async fn tick<'a>(
         measured_state.star_skip_counter = 0;
         measured_state.star_skip_counter_decimal = 0;
 
-        if (scene == SCENE_CUTSCENE_INTRO
-        && memory.in_game.current()?
-        // just started loading
-        && !memory.done_loading.current()?
-        && memory.done_loading.old().is_some_and(|l| l))
+        let should_start =
+            // Normal full game
+            (scene == Scene::CutsceneIntro && memory.in_game.current()?
+                // just started loading
+                && memory.is_loading()?
+                && memory.was_loading())
+            // ILs
             || (settings.individual_level_mode
                 && memory.level_time.old().is_some_and(|t| t == 0f32)
                 && memory.level_time.current()? > 0f32
                 && (!memory.level_is_dice.current()? || memory.lsd_time.current()? == 0f32))
-        {
+            // Isle enters + NG+
+            || (settings.start_isle_enter
+                // just finished loading
+                && !memory.is_loading()?
+                && memory.was_loading()
+                && scene
+                    .isle_start_on_scene_transition_from()
+                    .is_some_and(|scenes| scenes.contains(&measured_state.last_seen_scene)));
+
+        if should_start {
             set_variable("is run in progress", &format!("{}", true));
             pause_game_time();
             start();
@@ -336,78 +341,104 @@ async fn tick<'a>(
         }
 
         let level = memory.level.current()?;
-        let should_split = if scene == SCENE_CUTSCENE_KING_DICE_CONTRACT {
+        let should_split = if scene == Scene::CutsceneKingDice {
             // we do this first because the level is whatever the previous level was (usually Train)
             // so none of the level-specific logic makes sense
             split_log(
-                settings.split_kd_contract_cutscene
-                    && previous_scene != SCENE_CUTSCENE_KING_DICE_CONTRACT,
+                settings.split_kd_contract_cutscene && previous_scene != Scene::CutsceneKingDice,
                 "king dice contract",
             )
-        } else if scene == SCENE_CUTSCENE_DEVIL {
+        } else if scene == Scene::CutsceneDevil {
             split_log(
                 settings.split_devil_deal
                     && memory.devil_bad_ending_active.changed()?
                     && memory.devil_bad_ending_active.current()?,
                 "accepted devil deal",
             )
-        } else if let Some((from_scene, target_scenes)) = level.split_on_scene_transition_to() {
-            // split if the level transitions out to another specific scene (e.g. tutorial)
-            split_log(
-                level.is_split_enabled(settings)
-                    && memory.scene.changed()?
-                    && previous_scene == from_scene
-                    && target_scenes.contains(scene.as_str()),
-                &format!("scene change ({} -> {})", from_scene, scene.as_str()),
-            )
         } else if settings
             .split_level_complete
             .should_split_on_knockout(level)
             || settings.individual_level_mode
         {
-            // split on knockout
-            split_log(
-                level.is_split_enabled(settings)
-                    && memory.level_won.current()?
-                    && memory.level_won.old().is_some_and(|w| !w)
-                    && (!settings.split_highest_grade
-                        || level.get_type().is_highest_grade(
-                            memory.level_grade.current()?,
-                            memory.level_difficulty.current()?,
-                        )),
-                &format!("knockout ({:?})", level),
-            )
+            // split on knockout setting
+            if let Some((from_scene, target_scenes)) = level.split_on_scene_transition_to() {
+                // split if the level transitions out to another specific scene (e.g. tutorial)
+                split_log(
+                    level.is_split_enabled(settings)
+                        && memory.scene.changed()?
+                        && previous_scene == from_scene
+                        && target_scenes.contains(&scene),
+                    &format!("scene change ({} -> {})", from_scene, &scene),
+                )
+            } else {
+                // split on boss knockout
+                split_log(
+                    level.is_split_enabled(settings)
+                        && memory.level_won.current()?
+                        && memory.level_won.old().is_some_and(|w| !w)
+                        && (!settings.split_highest_grade
+                            || level.get_type().is_highest_grade(
+                                memory.level_grade.current()?,
+                                memory.level_difficulty.current()?,
+                            )),
+                    &format!("knockout ({:?})", level),
+                )
+            }
         } else {
             // split after scoreboard
             // split when we start loading, this gives cleaner splits (segment timer is at 0.00 in
-            //   the loading screen)
-            split_log(
-                level.is_split_enabled(settings)
-                    && measured_state.was_on_scorecard
-                    && memory.done_loading.changed()?
-                    && memory.is_loading()?
-                    && (!settings.split_highest_grade
-                        || level.get_type().is_highest_grade(
-                            memory.level_grade.current()?,
-                            memory.level_difficulty.current()?,
-                        )),
-                &format!("after scoreboard ({:?})", level),
-            )
+            // the loading screen)
+            if let Some((from_scene, target_scenes)) = level.split_on_scene_transition_to() {
+                // split if the level transitions out to another specific scene (e.g. tutorial)
+                split_log(
+                    level.is_split_enabled(settings)
+                        && memory.done_loading.changed()?
+                        && memory.is_loading()?
+                        && measured_state.last_seen_scene == from_scene
+                        && target_scenes.contains(&scene),
+                    &format!("scene change on fadeout ({} -> {})", from_scene, scene),
+                )
+            } else if let Some((from_scene, target_scenes)) =
+                level.split_on_won_scene_transition_to()
+            {
+                // similar level transition setting, but for levels that only need splitting if the level has been won (and not if exiting to map early)
+                split_log(
+                    level.is_split_enabled(settings)
+                        && memory.done_loading.changed()?
+                        && memory.is_loading()?
+                        && memory.level_won.current()?
+                        && measured_state.last_seen_scene == from_scene
+                        && target_scenes.contains(&scene),
+                    &format!(
+                        "scene change on fadeout for a won level ({} -> {})",
+                        from_scene, scene
+                    ),
+                )
+            } else {
+                split_log(
+                    level.is_split_enabled(settings)
+                        && memory.done_loading.changed()?
+                        && memory.is_loading()?
+                        && measured_state.last_seen_scene == Scene::Scoreboard
+                        && (!settings.split_highest_grade
+                            || level.get_type().is_highest_grade(
+                                memory.level_grade.current()?,
+                                memory.level_difficulty.current()?,
+                            )),
+                    &format!("after scoreboard ({:?})", level),
+                )
+            }
         };
 
         if should_split {
             split();
         }
 
-        if scene == SCENE_TITLE_SCREEN && settings.auto_reset
+        if scene == Scene::TitleScreen && settings.auto_reset
             || settings.individual_level_mode && level_is_resetting
         {
             reset();
         }
-    }
-
-    if measured_state.was_on_scorecard && memory.done_loading.changed()? && memory.is_loading()? {
-        measured_state.was_on_scorecard = false;
     }
 
     Ok(())
@@ -440,39 +471,23 @@ fn monitor_star_skip(
 
     let diff: Duration = end.duration_since(start);
 
-    match memory.level_difficulty.current()? {
-        Mode::Easy => {
-            if diff < STAR_SKIP_TIME_FIRST {
-                measured_state.star_skip_counter += 1;
-                measured_state.star_skip_counter_decimal += 6;
-            }
-        }
+    // (absolute number of stars skipped, stars skipped as a fraction of 6)
+    let (increase_counter, increase_decimal_counter) = match memory.level_difficulty.current()? {
+        // simple - one skipped star is a full skip (6)
+        Mode::Easy if diff < STAR_SKIP_TIME_FIRST => (1, 6),
+        // regular - two skipped stars is a full skip (6), one is a half skip (3 = 6/2)
+        Mode::Normal if diff < STAR_SKIP_TIME_FIRST => (2, 6),
+        Mode::Normal if diff < STAR_SKIP_TIME_SECOND => (1, 3),
+        // regular - three skipped star is a full skip (6), one is a third skip (2 = 6/3)
+        Mode::Hard if diff < STAR_SKIP_TIME_FIRST => (3, 6),
+        Mode::Hard if diff < STAR_SKIP_TIME_SECOND => (2, 4),
+        Mode::Hard if diff < STAR_SKIP_TIME_THIRD => (1, 2),
+        // did not skip stars so don't increase counter
+        _ => (0, 0),
+    };
 
-        Mode::Normal => {
-            if diff < STAR_SKIP_TIME_FIRST {
-                measured_state.star_skip_counter += 2;
-                measured_state.star_skip_counter_decimal += 6;
-            } else if diff < STAR_SKIP_TIME_SECOND {
-                measured_state.star_skip_counter += 1;
-                measured_state.star_skip_counter_decimal += 3;
-            }
-        }
-
-        Mode::Hard => {
-            if diff < STAR_SKIP_TIME_FIRST {
-                measured_state.star_skip_counter += 3;
-                measured_state.star_skip_counter_decimal += 6;
-            } else if diff < STAR_SKIP_TIME_SECOND {
-                measured_state.star_skip_counter += 2;
-                measured_state.star_skip_counter_decimal += 4;
-            } else if diff < STAR_SKIP_TIME_THIRD {
-                measured_state.star_skip_counter += 1;
-                measured_state.star_skip_counter_decimal += 2;
-            }
-        }
-
-        _ => {}
-    }
+    measured_state.star_skip_counter += increase_counter;
+    measured_state.star_skip_counter_decimal += increase_decimal_counter;
 
     Ok(())
 }

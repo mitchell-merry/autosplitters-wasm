@@ -2,7 +2,7 @@ use crate::error::SimpleError;
 use crate::watchers::{ValueGetter, Watcher};
 use asr::game_engine::unity::mono::{Class, Image, Module, UnityPointer};
 use asr::game_engine::unity::scene_manager::{CppGameObject, Scene, SceneManager};
-use asr::{Address, Process};
+use asr::{print_message, Address, Process};
 use bytemuck::CheckedBitPattern;
 use std::cell::{Cell, RefCell};
 use std::error::Error;
@@ -63,10 +63,41 @@ impl<'a, T: CheckedBitPattern> From<UnityPointerPath<'a>> for Watcher<'a, T> {
     }
 }
 
+pub struct ActiveSceneNameGetter<'a> {
+    process: &'a Process,
+    scene_manager: &'a SceneManager,
+}
+
+impl<'a> ActiveSceneNameGetter<'a> {
+    pub fn new(process: &'a Process, scene_manager: &'a SceneManager) -> Self {
+        ActiveSceneNameGetter {
+            process,
+            scene_manager,
+        }
+    }
+}
+
+impl<'a> From<ActiveSceneNameGetter<'a>> for Watcher<'a, String> {
+    fn from(value: ActiveSceneNameGetter<'a>) -> Self {
+        Watcher::new(Box::new(value))
+    }
+}
+
+impl<'a> ValueGetter<String> for ActiveSceneNameGetter<'a> {
+    fn get(&self) -> Result<String, Box<dyn Error>> {
+        Ok(self
+            .scene_manager
+            .get_current_scene(self.process)
+            .map_err(|_| SimpleError::from("could not get current scene"))?
+            .name(self.process, self.scene_manager)
+            .map_err(|_| SimpleError::from("could not get name of current scene"))?)
+    }
+}
+
 fn get_scene_if_active(
     process: &Process,
     scene_manager: &SceneManager,
-    scene: &str,
+    scene: &StringMatch,
 ) -> Result<Scene, Box<dyn Error>> {
     let active_scene = scene_manager
         .get_current_scene(process)
@@ -76,8 +107,8 @@ fn get_scene_if_active(
         .name(process, scene_manager)
         .map_err(|_| SimpleError::from("failed getting active scene name"))?;
 
-    if scene != active_scene_name {
-        return Err(SimpleError::from(&format!("unable to get game object path, in scene {active_scene_name} while expected scene was {}", scene)).into());
+    if !scene.test(&active_scene_name) {
+        return Err(SimpleError::from(&format!("unable to get game object path, in scene {active_scene_name} while expected scene was {:?}", scene)).into());
     }
 
     Ok(active_scene)
@@ -87,7 +118,7 @@ pub struct GameObjectActivePath<'a> {
     process: &'a Process,
     scene_manager: Rc<SceneManager>,
 
-    scene: &'static str,
+    scene: StringMatch,
     root_object_name: &'static str,
     path: &'static [&'static str],
 
@@ -98,7 +129,7 @@ impl<'a> GameObjectActivePath<'a> {
     pub fn new(
         process: &'a Process,
         scene_manager: Rc<SceneManager>,
-        scene: &'static str,
+        scene: StringMatch,
         root_object_name: &'static str,
         path: &'static [&'static str],
     ) -> Self {
@@ -115,7 +146,7 @@ impl<'a> GameObjectActivePath<'a> {
 
 impl<'a> ValueGetter<bool> for GameObjectActivePath<'a> {
     fn get(&self) -> Result<bool, Box<dyn Error>> {
-        let active_scene = get_scene_if_active(self.process, &self.scene_manager, self.scene)
+        let active_scene = get_scene_if_active(self.process, &self.scene_manager, &self.scene)
             .inspect_err(|_| self.cached_object.set(None))?;
 
         // this is pretty jank, but we're using the cached address if one exists
@@ -151,6 +182,21 @@ impl<'a> From<GameObjectActivePath<'a>> for Watcher<'a, bool> {
     }
 }
 
+#[derive(Debug)]
+pub enum StringMatch {
+    Exact(&'static str),
+    Any,
+}
+
+impl StringMatch {
+    pub fn test(&self, value: &str) -> bool {
+        match self {
+            StringMatch::Any => true,
+            StringMatch::Exact(s) => s.eq(&value),
+        }
+    }
+}
+
 struct MBFPInternal {
     offsets: [u64; 128],
     resolved_offsets: usize,
@@ -163,7 +209,7 @@ pub struct MonoBehaviourFieldPath<'a, T: CheckedBitPattern> {
     module: Rc<Module>,
     scene_manager: Rc<SceneManager>,
 
-    scene: &'static str,
+    scene: StringMatch,
     root_object_name: &'static str,
     game_object_path: &'static [&'static str],
     component_type_name: &'static str,
@@ -180,7 +226,7 @@ impl<'a, T: CheckedBitPattern> MonoBehaviourFieldPath<'a, T> {
         process: &'a Process,
         module: Rc<Module>,
         scene_manager: Rc<SceneManager>,
-        scene: &'static str,
+        scene: StringMatch,
         root_object_name: &'static str,
         game_object_path: &'static [&'static str],
         component_type_name: &'static str,
@@ -209,7 +255,7 @@ impl<'a, T: CheckedBitPattern> MonoBehaviourFieldPath<'a, T> {
 // FIXME: all of this is very jank
 impl<'a, T: CheckedBitPattern> ValueGetter<T> for MonoBehaviourFieldPath<'a, T> {
     fn get(&self) -> Result<T, Box<dyn Error>> {
-        let active_scene = get_scene_if_active(self.process, &self.scene_manager, self.scene)
+        let active_scene = get_scene_if_active(self.process, &self.scene_manager, &self.scene)
             .inspect_err(|_| self.cached_component.set(None))?;
 
         // this is pretty jank, but we're using the cached address if one exists
@@ -225,9 +271,13 @@ impl<'a, T: CheckedBitPattern> ValueGetter<T> for MonoBehaviourFieldPath<'a, T> 
                     )
                     .map_err(|_| SimpleError::from("couldnt find transform"))?;
 
-                transform
+                let game_object = transform
                     .get_game_object(self.process, &self.scene_manager)
-                    .map_err(|_| SimpleError::from("couldnt get game_object"))?
+                    .map_err(|_| SimpleError::from("couldnt get game_object"))?;
+
+                print_message(&format!("game_object {:?}", game_object));
+
+                game_object
                     .get_class(self.process, &self.scene_manager, self.component_type_name)
                     .map_err(|_| SimpleError::from("couldnt find component in game object"))?
             }

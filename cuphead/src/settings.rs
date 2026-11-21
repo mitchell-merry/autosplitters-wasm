@@ -1,4 +1,4 @@
-use crate::enums::{LevelType, Levels};
+use crate::enums::Levels;
 use asr::settings::gui::Title;
 use asr::settings::Gui;
 
@@ -37,18 +37,9 @@ impl LevelCompleteSetting {
             // chess pieces: no scorecard
             // angel/devil: no scorecard
             LevelCompleteSetting::AfterScorecard => {
-                level == Levels::Devil
-                    || level == Levels::Saltbaker
-                    || level == Levels::Graveyard
-                    || level == Levels::Mausoleum
-                    || level.get_type() == LevelType::ChessPiece
+                level == Levels::Devil || level == Levels::Saltbaker
             }
-            LevelCompleteSetting::AfterScorecardIncludingSaltbaker => {
-                level == Levels::Devil
-                    || level == Levels::Graveyard
-                    || level == Levels::Mausoleum
-                    || level.get_type() == LevelType::ChessPiece
-            }
+            LevelCompleteSetting::AfterScorecardIncludingSaltbaker => level == Levels::Devil,
         }
     }
 }
@@ -84,6 +75,11 @@ pub struct Settings {
     /// Additionally, every new best segment will automatically be saved without asking for confirmation, so tread carefully.
     #[default = false]
     pub auto_reset: bool,
+
+    /// Start on entering an isle (for NG+ and isle runs)
+    ///
+    /// Starts when you enter an isle from a set of predefined locations.
+    pub start_isle_enter: bool,
 
     /// Display Star Skip Counter in decimal notation (half = 0.5, full = 1.0)
     ///

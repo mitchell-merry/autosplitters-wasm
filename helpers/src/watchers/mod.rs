@@ -1,3 +1,5 @@
+use crate::error::SimpleError;
+use asr::string::{ArrayCString, ArrayWString};
 use bytemuck::CheckedBitPattern;
 use once_cell::unsync::OnceCell;
 use std::error::Error;
@@ -33,14 +35,14 @@ impl<T: Copy> ValueGetter<T> for T {
 /// read a value from memory), and invalidate it at the end of the tick. During the tick, you can
 /// then observe how that value changed from the previous tick, and act on that behaviour (e.g.
 /// value went from false -> true, I should do something, i.e. start/pause/split the timer)
-pub struct Watcher<'a, T: Copy> {
+pub struct Watcher<'a, T: Clone> {
     source: Box<dyn ValueGetter<T> + 'a>,
     current: OnceCell<T>,
     old: Option<T>,
     default: Option<T>,
 }
 
-impl<'a, T: Copy> Watcher<'a, T> {
+impl<'a, T: Clone> Watcher<'a, T> {
     pub fn new(source: Box<dyn ValueGetter<T> + 'a>) -> Self {
         Self {
             source,
@@ -62,12 +64,12 @@ impl<'a, T: Copy> Watcher<'a, T> {
                 };
 
                 // Only return the error we got if we have no default
-                match self.default {
+                match self.default.clone() {
                     Some(default) => Ok(default),
                     None => Err(err),
                 }
             })
-            .copied()
+            .cloned()
     }
 
     /// Retrieve the previous value for this watcher.
@@ -77,7 +79,7 @@ impl<'a, T: Copy> Watcher<'a, T> {
     ///
     /// This returns `None` if there's no value to retrieve, otherwise returns `Some` if it can.
     pub fn old(&self) -> Option<T> {
-        self.old
+        self.old.clone()
     }
 
     /// Invalidate the watcher. This moves the value of `current` into `old`, and empties the cache
@@ -88,7 +90,7 @@ impl<'a, T: Copy> Watcher<'a, T> {
         // Is this desirable?
         // None of my code depends on this behaviour at the moment, since everything is read on
         // every tick anyway.
-        self.old = self.current.get().copied();
+        self.old = self.current.get().cloned();
         self.current = OnceCell::new();
     }
 
@@ -115,14 +117,34 @@ impl<T: Copy + 'static> Watcher<'_, T> {
     }
 }
 
-impl<'a, T: Copy + PartialEq> Watcher<'a, T> {
+impl<'a, T: Clone + PartialEq> Watcher<'a, T> {
     /// Simply tells you if the value changed. Requires reading the value from current, so this can
     /// return an Err.
     pub fn changed(&self) -> Result<bool, Box<dyn Error>> {
-        match self.old {
+        match self.old.clone() {
             None => Ok(false),
             Some(old) => Ok(old != self.current()?),
         }
+    }
+
+    pub fn was(&self, value: T) -> bool {
+        self.old.clone().is_some_and(|old| old == value)
+    }
+
+    pub fn is(&self, value: T) -> Result<bool, Box<dyn Error>> {
+        Ok(self.current()? == value)
+    }
+
+    pub fn changed_from(&self, from: T) -> Result<bool, Box<dyn Error>> {
+        Ok(self.was(from) && self.changed()?)
+    }
+
+    pub fn changed_to(&self, to: T) -> Result<bool, Box<dyn Error>> {
+        Ok(self.changed()? && self.is(to)?)
+    }
+
+    pub fn changed_from_to(&self, from: T, to: T) -> Result<bool, Box<dyn Error>> {
+        Ok(self.was(from) && self.is(to)?)
     }
 }
 
@@ -136,6 +158,36 @@ impl<'a, T: CheckedBitPattern + Default> Watcher<'a, T> {
             current: self.current,
             old: self.old,
             default: Some(T::default()),
+        }
+    }
+}
+
+impl<'a, const N: usize> Watcher<'a, ArrayCString<N>> {
+    pub fn current_string(&self) -> Result<String, Box<dyn Error>> {
+        let curr = self.current()?;
+        let str = curr.validate_utf8()?.to_owned();
+
+        Ok(str)
+    }
+    pub fn old_string(&self) -> Result<String, Box<dyn Error>> {
+        match self.old {
+            None => Err(SimpleError::from("No old value").into()),
+            Some(cstr) => Ok(cstr.validate_utf8()?.to_owned()),
+        }
+    }
+}
+
+impl<'a, const N: usize> Watcher<'a, ArrayWString<N>> {
+    pub fn current_string(&self) -> Result<String, Box<dyn Error>> {
+        let curr = self.current()?;
+        let str = String::from_utf16(curr.as_slice())?;
+
+        Ok(str)
+    }
+    pub fn old_string(&self) -> Result<String, Box<dyn Error>> {
+        match self.old {
+            None => Err(SimpleError::from("No old value").into()),
+            Some(wstr) => Ok(String::from_utf16(wstr.as_slice())?),
         }
     }
 }

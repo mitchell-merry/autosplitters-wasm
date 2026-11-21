@@ -20,6 +20,24 @@ I have some work done in a couple engines...
 
 There's helpers in [helpers](./helpers), and everything else is a game.
 
+## Installation
+
+### In LiveSplit
+
+The recommend approach is to use the Edit Splits viewer, browse by game name, and then activate from inside LiveSplit.
+However, if that is not possible (e.g. the splitter is not yet available there), follow these steps:
+
+1. Download the autosplitter from the [Releases](https://github.com/mitchell-merry/autosplitters-wasm/releases) page
+   (the `.wasm` file).
+2. Open LiveSplit, and right click -> "Edit Splits". If a splitter is activated here, deactivate it, and click "OK" to
+   save your changes.
+3. Right click LiveSplit -> "Edit Layout"
+4. Add "Control" -> "Auto-Splitting Runtime"
+5. Edit the settings of that component and browse to the downloaded `.wasm` file.
+6. Change settings as needed and apply the layout.
+
+In most cases, you'll need to also right click LiveSplit and set "Compare Against" to "Game Time".
+
 ## Compilation
 
 This auto splitter is written in Rust. In order to compile it, you need to

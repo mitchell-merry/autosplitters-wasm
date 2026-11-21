@@ -1,10 +1,12 @@
 use crate::enums::Grade;
 use crate::enums::Levels;
 use crate::enums::Mode;
+use crate::scenes::{Scene, SceneGetter};
 use asr::game_engine::unity::scene_manager::SceneManager;
-use asr::string::ArrayWString;
 use asr::{Address64, PointerSize};
-use helpers::watchers::unity::{GameObjectActivePath, MonoBehaviourFieldPath, UnityImage};
+use helpers::watchers::unity::{
+    GameObjectActivePath, MonoBehaviourFieldPath, StringMatch, UnityImage,
+};
 use helpers::watchers::Watcher;
 use std::error::Error;
 use std::rc::Rc;
@@ -32,7 +34,7 @@ impl Offsets {
 pub struct Memory<'a> {
     pub done_loading: Watcher<'a, bool>,
     pub insta: Watcher<'a, Address64>,
-    pub scene: Watcher<'a, ArrayWString<128>>,
+    pub scene: Watcher<'a, Scene>,
     pub in_game: Watcher<'a, bool>,
     pub level: Watcher<'a, Levels>,
     pub level_won: Watcher<'a, bool>,
@@ -68,12 +70,12 @@ impl<'a> Memory<'a> {
             ))
             .default_given(true),
             insta: Watcher::from(unity.path("SceneLoader", 0, &["_instance", "camera"])).default(),
-            scene: Watcher::from(unity.path(
+            scene: Watcher::from(SceneGetter::from(unity.path(
                 "SceneLoader",
                 0,
                 &["<SceneName>k__BackingField", offsets.string_contents],
-            ))
-            .default(),
+            )))
+            .default_given(Scene::Invalid),
 
             in_game: Watcher::from(unity.path("PlayerData", 0, &["inGame"])).default_given(false),
             level: Watcher::from(unity.path("Level", 0, &["<PreviousLevel>k__BackingField"]))
@@ -160,7 +162,7 @@ impl<'a> Memory<'a> {
             devil_bad_ending_active: Watcher::from(GameObjectActivePath::new(
                 unity.process,
                 scene_manager.clone(),
-                "scene_cutscene_devil",
+                StringMatch::Exact("scene_cutscene_devil"),
                 "Cutscene",
                 &["devil_cinematic_bad_ending_transition_0001"],
             ))
@@ -169,7 +171,7 @@ impl<'a> Memory<'a> {
                 unity.process,
                 unity.module.clone(),
                 scene_manager.clone(),
-                "scene_win",
+                StringMatch::Exact("scene_win"),
                 "WinScreen",
                 &["UI", "Canvas", "Scoring", "DifficultyTicker"],
                 "WinScreenTicker",
@@ -180,7 +182,7 @@ impl<'a> Memory<'a> {
                 unity.process,
                 unity.module.clone(),
                 scene_manager.clone(),
-                "scene_win",
+                StringMatch::Exact("scene_win"),
                 "WinScreen",
                 &["UI", "Canvas", "Scoring", "DifficultyTicker"],
                 "WinScreenTicker",
@@ -217,5 +219,9 @@ impl<'a> Memory<'a> {
 
     pub fn is_loading(&self) -> Result<bool, Box<dyn Error>> {
         Ok(!self.done_loading.current()?)
+    }
+
+    pub fn was_loading(&self) -> bool {
+        !self.done_loading.old().is_some_and(|l| l)
     }
 }
