@@ -20,13 +20,12 @@ checksum = "7c02d123df017efcdfbd739ef81735b36c5ba83ec3c59c80a9d7ecc718f92e50"
 [[package]]
 name = "asr"
 version = "0.1.0"
-source = "git+https://github.com/mitchell-merry/asr?branch=some-helpers#f1f93cb650ca751d17f15ba0b8575958e36f3ec8"
+source = "git+https://github.com/mitchell-merry/asr?branch=some-helpers#d9348997f983450b87668ac50688a69c70e3ce56"
 dependencies = [
  "arrayvec",
  "asr-derive 0.1.0 (git+https://github.com/mitchell-merry/asr?branch=some-helpers)",
  "bitflags",
  "bytemuck",
- "memchr",
  "time",
  "wasi",
 ]
@@ -34,13 +33,12 @@ dependencies = [
 [[package]]
 name = "asr"
 version = "0.1.0"
-source = "git+https://github.com/mitchell-merry/asr?branch=v3-fixes#5e9cf4e99625609f1a780cddb9b6910c30a1e3b6"
+source = "git+https://github.com/mitchell-merry/asr?branch=v3-fixes#72f8bdd92f160a51bba84532553418ce0b346cbf"
 dependencies = [
  "arrayvec",
  "asr-derive 0.1.0 (git+https://github.com/mitchell-merry/asr?branch=v3-fixes)",
  "bitflags",
  "bytemuck",
- "memchr",
  "time",
  "wasi",
 ]
@@ -48,7 +46,7 @@ dependencies = [
 [[package]]
 name = "asr-derive"
 version = "0.1.0"
-source = "git+https://github.com/mitchell-merry/asr?branch=some-helpers#f1f93cb650ca751d17f15ba0b8575958e36f3ec8"
+source = "git+https://github.com/mitchell-merry/asr?branch=some-helpers#d9348997f983450b87668ac50688a69c70e3ce56"
 dependencies = [
  "heck 0.4.1",
  "proc-macro2",
@@ -59,7 +57,7 @@ dependencies = [
 [[package]]
 name = "asr-derive"
 version = "0.1.0"
-source = "git+https://github.com/mitchell-merry/asr?branch=v3-fixes#5e9cf4e99625609f1a780cddb9b6910c30a1e3b6"
+source = "git+https://github.com/mitchell-merry/asr?branch=v3-fixes#72f8bdd92f160a51bba84532553418ce0b346cbf"
 dependencies = [
  "heck 0.4.1",
  "proc-macro2",

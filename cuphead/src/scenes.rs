@@ -12,6 +12,9 @@ pub enum Scene {
     #[strum(serialize = "scene_title")]
     TitleScreen,
 
+    #[strum(serialize = "scene_slot_select")]
+    SlotSelect,
+
     #[strum(serialize = "scene_cutscene_intro")]
     CutsceneIntro,
 

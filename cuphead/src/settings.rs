@@ -129,4 +129,14 @@ pub struct Settings {
 
     /// Split on the gauntlet
     pub split_chess: ChessPieceSetting,
+
+    /// Monitoring of Level In-Game Time and Star Skip Counter is available! Visit:
+    #[heading_level = 0]
+    _custom_variables_documantation1: Title,
+    /// https://tinyurl.com/j8bzerj6
+    #[heading_level = 0]
+    _custom_variables_documantation2: Title,
+    /// for information on how to add it.
+    #[heading_level = 0]
+    _custom_variables_documantation3: Title,
 }
