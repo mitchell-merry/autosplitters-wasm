@@ -434,7 +434,7 @@ async fn tick<'a>(
             split();
         }
 
-        if scene == Scene::TitleScreen && settings.auto_reset
+        if (scene == Scene::TitleScreen || scene == Scene::SlotSelect) && settings.auto_reset
             || settings.individual_level_mode && level_is_resetting
         {
             reset();
